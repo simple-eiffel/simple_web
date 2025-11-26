@@ -112,8 +112,6 @@ feature -- Advanced Operations
 			l_session: CURL_HTTP_CLIENT_SESSION
 			l_ctx: HTTP_CLIENT_REQUEST_CONTEXT
 			l_response: detachable HTTP_CLIENT_RESPONSE
-			l_hdr_name: STRING
-			l_hdr_value: READABLE_STRING
 		do
 			-- Create session
 			create l_session.make (a_request.url)
@@ -126,18 +124,13 @@ feature -- Advanced Operations
 				end
 			end
 
-			-- Set upload data if present
-			if attached a_request.body as al_body and then not al_body.is_empty then
-				l_ctx.set_upload_data (al_body)
-			end
-
 			-- Execute based on method
 			if a_request.method ~ Http_method_get then
 				l_response := l_session.get ("", l_ctx)
 			elseif a_request.method ~ Http_method_post then
-				l_response := l_session.post ("", l_ctx, Void)
+				l_response := l_session.post ("", l_ctx, a_request.body)
 			elseif a_request.method ~ Http_method_put then
-				l_response := l_session.put ("", l_ctx, Void)
+				l_response := l_session.put ("", l_ctx, a_request.body)
 			elseif a_request.method ~ Http_method_delete then
 				l_response := l_session.delete ("", l_ctx)
 			end
