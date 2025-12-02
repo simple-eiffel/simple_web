@@ -226,6 +226,93 @@ l_path := a_request.path
 if a_request.is_post then ...
 ```
 
+### Middleware Pipeline
+
+Add middleware to process requests before they reach your handlers:
+
+```eiffel
+local
+    l_server: SIMPLE_WEB_SERVER
+do
+    create l_server.make (8080)
+
+    -- Add middleware (runs in order)
+    l_server.use (create {SIMPLE_WEB_LOGGING_MIDDLEWARE}.make)
+    l_server.use (create {SIMPLE_WEB_CORS_MIDDLEWARE}.make)
+    l_server.use (create {SIMPLE_WEB_AUTH_MIDDLEWARE}.make_bearer (agent validate_token))
+
+    -- Register routes
+    l_server.on_get ("/api/data", agent handle_data)
+    l_server.start
+end
+```
+
+### Built-in Middleware
+
+**Logging Middleware** - Logs request method and path:
+```eiffel
+l_server.use (create {SIMPLE_WEB_LOGGING_MIDDLEWARE}.make)
+```
+
+**CORS Middleware** - Cross-Origin Resource Sharing:
+```eiffel
+-- Allow all origins
+l_server.use (create {SIMPLE_WEB_CORS_MIDDLEWARE}.make)
+
+-- Allow specific origin
+l_server.use (create {SIMPLE_WEB_CORS_MIDDLEWARE}.make_with_origin ("https://example.com"))
+
+-- Allow multiple origins
+l_server.use (create {SIMPLE_WEB_CORS_MIDDLEWARE}.make_with_origins (<<"https://a.com", "https://b.com">>))
+```
+
+**Auth Middleware** - Authentication:
+```eiffel
+-- Bearer token validation
+l_server.use (create {SIMPLE_WEB_AUTH_MIDDLEWARE}.make_bearer (agent validate_token))
+
+-- Basic auth validation
+l_server.use (create {SIMPLE_WEB_AUTH_MIDDLEWARE}.make_basic (agent validate_credentials))
+
+-- API key validation (header-based)
+l_server.use (create {SIMPLE_WEB_AUTH_MIDDLEWARE}.make_api_key ("X-API-Key", agent validate_api_key))
+
+-- Exclude paths from auth
+l_auth := create {SIMPLE_WEB_AUTH_MIDDLEWARE}.make_bearer (agent validate_token)
+l_auth.exclude_path ("/health")
+l_auth.exclude_path ("/login")
+l_server.use (l_auth)
+```
+
+### Custom Middleware
+
+Create custom middleware by inheriting from `SIMPLE_WEB_MIDDLEWARE`:
+
+```eiffel
+class MY_CUSTOM_MIDDLEWARE
+inherit
+    SIMPLE_WEB_MIDDLEWARE
+
+feature -- Access
+    name: STRING = "custom"
+
+feature -- Processing
+    process (a_request: SIMPLE_WEB_SERVER_REQUEST;
+             a_response: SIMPLE_WEB_SERVER_RESPONSE;
+             a_next: PROCEDURE)
+        do
+            -- Pre-processing (before handler)
+            print ("Before handler%N")
+
+            -- Call next middleware or handler
+            a_next.call (Void)
+
+            -- Post-processing (after handler)
+            print ("After handler%N")
+        end
+end
+```
+
 ## Architecture
 
 ### Client Classes
@@ -364,6 +451,36 @@ ec.exe -batch -config simple_web.ecf -target wms_api_tests -tests
 - Server router functionality
 
 Run tests via EiffelStudio AutoTest.
+
+## Roadmap
+
+### Completed
+- [x] HTTP client with fluent request builder
+- [x] Hybrid client (curl.exe for POST, libcurl for GET)
+- [x] AI clients (Ollama, Claude, OpenAI, Grok)
+- [x] HTTP server with agent-based routing
+- [x] Path parameter support ({id} placeholders)
+- [x] Clean request/response wrapper API
+- [x] JSON request/response support
+- [x] Mock request/response for testing
+- [x] Middleware pipeline system
+- [x] Logging middleware
+- [x] CORS middleware (allow-all and specific origins)
+- [x] Auth middleware (Bearer, Basic, API key)
+
+### Planned
+- [ ] Rate limiting middleware
+- [ ] Request validation middleware (JSON schema)
+- [ ] Static file serving
+- [ ] WebSocket support
+- [ ] Session management
+- [ ] Cookie handling helpers
+- [ ] Multipart form data parsing
+- [ ] File upload handling
+
+### Known Issues
+- curl_http_client corrupts POST bodies to localhost (use Hybrid client)
+- Large response bodies may be truncated by libcurl buffer
 
 ## License
 
