@@ -205,7 +205,7 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Implementation Attributes
 
-	process_helper: FW_PROCESS_HELPER
+	process_helper: SIMPLE_PROCESS_HELPER
 			-- Process execution helper
 
 	libcurl_client: SIMPLE_WEB_CLIENT
