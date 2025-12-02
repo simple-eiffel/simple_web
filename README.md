@@ -467,6 +467,8 @@ Run tests via EiffelStudio AutoTest.
 - [x] Logging middleware
 - [x] CORS middleware (allow-all and specific origins)
 - [x] Auth middleware (Bearer, Basic, API key)
+- [x] Input sanitization (XSS, path traversal, header injection)
+- [x] Safe parameter accessors with built-in sanitization
 
 ### Planned
 - [ ] Rate limiting middleware
@@ -481,6 +483,66 @@ Run tests via EiffelStudio AutoTest.
 ### Known Issues
 - curl_http_client corrupts POST bodies to localhost (use Hybrid client)
 - Large response bodies may be truncated by libcurl buffer
+
+## Security
+
+### Input Sanitization
+
+The library provides `SIMPLE_WEB_SANITIZER` for protecting against common attacks:
+
+```eiffel
+local
+    l_sanitizer: SIMPLE_WEB_SANITIZER
+do
+    create l_sanitizer
+
+    -- HTML/XSS protection
+    l_safe := l_sanitizer.sanitize_html (user_input)  -- Escapes < > & " '
+    l_stripped := l_sanitizer.strip_html_tags (user_input)  -- Removes all tags
+
+    -- Path traversal protection
+    l_safe_path := l_sanitizer.sanitize_path_parameter (raw_param)  -- Removes .. / \
+    if l_sanitizer.is_safe_path_parameter (raw_param) then ...
+
+    -- Header injection protection
+    l_safe_header := l_sanitizer.sanitize_header_value (raw_value)  -- Removes CR LF
+
+    -- SQL escaping (prefer parameterized queries)
+    l_escaped := l_sanitizer.escape_sql_string (user_input)  -- Doubles single quotes
+
+    -- JSON string escaping
+    l_json_safe := l_sanitizer.sanitize_json_string (user_input)  -- Escapes " \ newlines
+
+    -- Length limiting
+    l_truncated := l_sanitizer.truncate (user_input, 100)  -- Max 100 chars
+end
+```
+
+### Safe Parameter Access
+
+The request object provides sanitized versions of parameter accessors:
+
+```eiffel
+handle_user (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+    do
+        -- Raw access (use with caution)
+        l_id := req.path_parameter ("id")
+
+        -- Safe access (sanitizes path traversal)
+        l_safe_id := req.safe_path_parameter ("id")
+
+        -- Safe query with length limit
+        l_search := req.safe_query_parameter ("q", 100)  -- Max 100 chars, HTML escaped
+    end
+```
+
+### Security Recommendations
+
+1. **Always use `safe_*` methods** for user-supplied parameters
+2. **Validate input types** before using (e.g., check if ID is numeric)
+3. **Use parameterized queries** instead of string escaping for SQL
+4. **Set Content-Security-Policy headers** for XSS protection
+5. **Use HTTPS in production** (configure at proxy/load balancer level)
 
 ## License
 

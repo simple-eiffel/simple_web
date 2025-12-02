@@ -163,11 +163,14 @@ feature {NONE} -- Implementation
 
 	is_origin_allowed (a_origin: STRING): BOOLEAN
 			-- Is `a_origin' in allowed list?
+			-- Uses value equality (~) not reference equality.
+		require
+			origin_attached: a_origin /= Void
 		do
 			if allow_all_origins then
 				Result := True
 			else
-				Result := allowed_origins.has (a_origin)
+				Result := across allowed_origins as ic some ic ~ a_origin end
 			end
 		end
 

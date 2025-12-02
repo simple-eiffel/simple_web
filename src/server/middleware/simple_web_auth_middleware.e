@@ -138,9 +138,12 @@ feature {NONE} -- Implementation
 
 	is_path_excluded (a_path: STRING): BOOLEAN
 			-- Is `a_path' excluded from auth?
+			-- Uses value equality (~) not reference equality.
+		require
+			path_attached: a_path /= Void
 		do
 			if attached excluded_paths as l_excluded then
-				Result := l_excluded.has (a_path)
+				Result := across l_excluded as ic some ic ~ a_path end
 			end
 		end
 

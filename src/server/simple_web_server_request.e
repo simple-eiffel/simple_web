@@ -104,8 +104,9 @@ feature -- Access
 feature -- Query Parameters
 
 	query_parameter (a_name: READABLE_STRING_GENERAL): detachable STRING_32
-			-- Get query parameter value by name.
+			-- Get query parameter value by name (raw, unsanitized).
 			-- Returns Void if not found.
+			-- For sanitized access, use `safe_query_parameter'.
 		require
 			name_attached: a_name /= Void
 		do
@@ -115,6 +116,21 @@ feature -- Query Parameters
 				end
 			end
 			-- Note: Mock mode doesn't support query parameters currently
+		end
+
+	safe_query_parameter (a_name: READABLE_STRING_GENERAL; a_max_length: INTEGER): detachable STRING_32
+			-- Get sanitized query parameter value by name.
+			-- HTML escapes and truncates to `a_max_length'.
+			-- Returns Void if not found.
+		require
+			name_attached: a_name /= Void
+			positive_length: a_max_length > 0
+		do
+			if attached query_parameter (a_name) as l_raw then
+				Result := sanitizer.sanitize_user_input (l_raw, a_max_length)
+			end
+		ensure
+			length_limited: attached Result implies Result.count <= a_max_length + 20
 		end
 
 	has_query_parameter (a_name: READABLE_STRING_GENERAL): BOOLEAN
@@ -130,12 +146,27 @@ feature -- Query Parameters
 feature -- Path Parameters
 
 	path_parameter (a_name: READABLE_STRING_GENERAL): detachable STRING_32
-			-- Get path parameter value by name.
+			-- Get path parameter value by name (raw, unsanitized).
 			-- Returns Void if not found.
+			-- For sanitized access, use `safe_path_parameter'.
 		require
 			name_attached: a_name /= Void
 		do
 			Result := path_parameters.item (a_name.to_string_32)
+		end
+
+	safe_path_parameter (a_name: READABLE_STRING_GENERAL): detachable STRING_32
+			-- Get sanitized path parameter value by name.
+			-- Removes path traversal characters (.. / \).
+			-- Returns Void if not found.
+		require
+			name_attached: a_name /= Void
+		do
+			if attached path_parameter (a_name) as l_raw then
+				Result := sanitizer.sanitize_path_parameter (l_raw)
+			end
+		ensure
+			sanitized: attached Result implies sanitizer.is_safe_path_parameter (Result)
 		end
 
 	has_path_parameter (a_name: READABLE_STRING_GENERAL): BOOLEAN
@@ -292,6 +323,16 @@ feature -- Mock Helpers
 			body_attached: a_body /= Void
 		do
 			mock_body := a_body
+		end
+
+feature {NONE} -- Implementation
+
+	sanitizer: SIMPLE_WEB_SANITIZER
+			-- Shared sanitizer instance.
+		once
+			create Result
+		ensure
+			result_attached: Result /= Void
 		end
 
 invariant
