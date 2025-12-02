@@ -1,21 +1,35 @@
 # SIMPLE_WEB
 
-High-level HTTP client library for Eiffel, providing clean APIs for REST operations and AI service integration.
+High-level HTTP library for Eiffel, providing clean APIs for both HTTP client operations and HTTP server development.
 
 ## Features
 
+### HTTP Client
 - **Fluent request builder** - chainable API for constructing HTTP requests
 - **JSON support** - easy POST/PUT with JSON bodies
 - **AI clients** - ready-to-use clients for Ollama, Claude, OpenAI, and Grok
 - **Response handling** - structured access to status, headers, and body
+
+### HTTP Server (NEW)
+- **Agent-based routing** - register handlers with `on_get`, `on_post`, etc.
+- **Path parameters** - pattern matching with `{id}` placeholders
+- **Clean request/response API** - wrappers around WSF primitives
+- **JSON support** - send JSON objects directly with `send_json_object`
 
 ## Installation
 
 Add to your ECF:
 
 ```xml
-<library name="simple_web" location="path/to/simple_web/simple_web.ecf"/>
+<library name="simple_web" location="$SIMPLE_WEB/simple_web.ecf"/>
 ```
+
+### Environment Variables
+
+Set these environment variables for library references:
+- `SIMPLE_WEB` - path to simple_web directory
+- `FRAMEWORK` - path to framework library
+- `SIMPLE_JSON` - path to simple_json library
 
 ### Dependencies
 
@@ -23,8 +37,10 @@ Add to your ECF:
 - `curl_http_client` library (included with EiffelStudio)
 - `curl.exe` available on PATH (for hybrid client)
 - `framework` library
+- `simple_json` library
+- EWF libraries (wsf, httpd, default_standalone - included with EiffelStudio)
 
-## Usage
+## HTTP Client Usage
 
 ### Basic HTTP Operations
 
@@ -34,14 +50,14 @@ local
     l_response: SIMPLE_WEB_RESPONSE
 do
     create l_client.make
-    
+
     -- GET
     l_response := l_client.get ("https://api.example.com/data")
-    
+
     -- POST JSON
-    l_response := l_client.post_json ("https://api.example.com/data", 
+    l_response := l_client.post_json ("https://api.example.com/data",
         "{%"name%":%"value%"}")
-    
+
     if l_response.is_success then
         print (l_response.body)
     end
@@ -58,11 +74,11 @@ local
     l_response: SIMPLE_WEB_RESPONSE
 do
     create l_client.make
-    
+
     -- Uses curl.exe process for POST (reliable)
     l_response := l_client.post_json ("http://localhost:11434/api/generate",
         "{%"model%":%"llama3%",%"prompt%":%"Hello%",%"stream%":false}")
-    
+
     -- Uses libcurl for GET (fast)
     l_response := l_client.get ("http://localhost:11434/api/tags")
 end
@@ -76,14 +92,14 @@ local
     l_response: SIMPLE_WEB_RESPONSE
 do
     create l_ollama
-    
+
     -- Generate completion
     l_response := l_ollama.generate ("llama3", "Why is the sky blue?")
-    
+
     -- Chat
-    l_response := l_ollama.chat ("llama3", 
+    l_response := l_ollama.chat ("llama3",
         <<["user", "Hello"], ["assistant", "Hi!"], ["user", "How are you?"]>>)
-    
+
     -- List models
     l_response := l_ollama.list_models
 end
@@ -98,18 +114,121 @@ local
     l_response: SIMPLE_WEB_RESPONSE
 do
     create l_client.make
-    
+
     create l_request.make_post ("https://api.example.com/data")
     l_request.with_bearer_token ("your-token")
             .with_json_body ("{%"key%":%"value%"}")
             .with_timeout (30000)
             .do_nothing
-    
+
     l_response := l_client.execute (l_request)
 end
 ```
 
+## HTTP Server Usage
+
+### Basic Server
+
+```eiffel
+local
+    l_server: SIMPLE_WEB_SERVER
+do
+    create l_server.make (8080)
+
+    -- Register routes
+    l_server.on_get ("/", agent handle_root)
+    l_server.on_get ("/api/users", agent handle_users)
+    l_server.on_get ("/api/users/{id}", agent handle_user)
+    l_server.on_post ("/api/users", agent create_user)
+    l_server.on_put ("/api/users/{id}", agent update_user)
+    l_server.on_delete ("/api/users/{id}", agent delete_user)
+
+    -- Start server (blocking)
+    l_server.start
+end
+
+feature {NONE} -- Handlers
+
+handle_root (a_request: SIMPLE_WEB_SERVER_REQUEST; a_response: SIMPLE_WEB_SERVER_RESPONSE)
+    do
+        a_response.send_text ("Welcome to my API")
+    end
+
+handle_user (a_request: SIMPLE_WEB_SERVER_REQUEST; a_response: SIMPLE_WEB_SERVER_RESPONSE)
+    local
+        l_id: detachable STRING_32
+    do
+        l_id := a_request.path_parameter ("id")
+        if l_id /= Void then
+            -- Fetch user with l_id from database
+            a_response.send_json ("{%"id%":" + l_id + ",%"name%":%"John%"}")
+        else
+            a_response.set_bad_request
+            a_response.send_json ("{%"error%":%"Missing id%"}")
+        end
+    end
+
+create_user (a_request: SIMPLE_WEB_SERVER_REQUEST; a_response: SIMPLE_WEB_SERVER_RESPONSE)
+    do
+        if attached a_request.body_as_json as l_json then
+            -- Process JSON body
+            a_response.set_created
+            a_response.send_json ("{%"status%":%"created%"}")
+        else
+            a_response.set_bad_request
+            a_response.send_json ("{%"error%":%"Invalid JSON%"}")
+        end
+    end
+```
+
+### Server Response Methods
+
+```eiffel
+-- Status setters
+a_response.set_ok              -- 200
+a_response.set_created         -- 201
+a_response.set_no_content      -- 204
+a_response.set_bad_request     -- 400
+a_response.set_unauthorized    -- 401
+a_response.set_forbidden       -- 403
+a_response.set_not_found       -- 404
+a_response.set_internal_server_error  -- 500
+
+-- Send methods
+a_response.send_text ("Hello")
+a_response.send_html ("<h1>Hello</h1>")
+a_response.send_json ("{%"key%":%"value%"}")
+a_response.send_json_object (my_json_object)
+a_response.send_empty
+a_response.send_redirect ("/other/path")
+```
+
+### Server Request Methods
+
+```eiffel
+-- Path parameters (from URL pattern like /users/{id})
+l_id := a_request.path_parameter ("id")
+
+-- Query parameters (from ?name=value)
+l_name := a_request.query_parameter ("name")
+
+-- Headers
+l_auth := a_request.header ("Authorization")
+l_content_type := a_request.content_type
+
+-- Body
+l_body := a_request.body
+l_json := a_request.body_as_json
+
+-- Request info
+l_method := a_request.method
+l_path := a_request.path
+if a_request.is_post then ...
+```
+
 ## Architecture
+
+### Client Classes
 
 | Class | Purpose |
 |-------|---------|
@@ -120,6 +239,17 @@ end
 | `SIMPLE_WEB_OLLAMA_CLIENT` | Ollama API client |
 | `SIMPLE_WEB_CLAUDE_CLIENT` | Claude API client |
 | `SIMPLE_WEB_OPENAI_CLIENT` | OpenAI API client |
+
+### Server Classes
+
+| Class | Purpose |
+|-------|---------|
+| `SIMPLE_WEB_SERVER` | Main server class with route registration |
+| `SIMPLE_WEB_SERVER_EXECUTION` | WSF execution handler (dispatches to routes) |
+| `SIMPLE_WEB_SERVER_REQUEST` | Request wrapper with path/query params |
+| `SIMPLE_WEB_SERVER_RESPONSE` | Response wrapper with send methods |
+| `SIMPLE_WEB_SERVER_ROUTE` | Route pattern matching with {param} support |
+| `SIMPLE_WEB_SERVER_ROUTER` | Singleton router for route storage |
 
 ## Known Issues
 
@@ -135,11 +265,13 @@ The EiffelStudio `curl_http_client` library corrupts JSON bodies when POSTing to
 
 ## Testing
 
-59 tests covering:
+70 tests covering:
 - Request/response handling
 - Integration with httpbin.org, jsonplaceholder.typicode.com
 - Ollama API operations
 - Hybrid client functionality
+- Server route pattern matching
+- Server router functionality
 
 Run tests via EiffelStudio AutoTest.
 
