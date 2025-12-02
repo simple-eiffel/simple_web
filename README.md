@@ -28,7 +28,7 @@ Add to your ECF:
 
 Set these environment variables for library references:
 - `SIMPLE_WEB` - path to simple_web directory
-- `FRAMEWORK` - path to framework library
+- `SIMPLE_PROCESS` - path to simple_process library
 - `SIMPLE_JSON` - path to simple_json library
 
 ### Dependencies
@@ -36,7 +36,7 @@ Set these environment variables for library references:
 - EiffelStudio 25.02+
 - `curl_http_client` library (included with EiffelStudio)
 - `curl.exe` available on PATH (for hybrid client)
-- `framework` library
+- `simple_process` library
 - `simple_json` library
 - EWF libraries (wsf, httpd, default_standalone - included with EiffelStudio)
 
@@ -262,6 +262,96 @@ The EiffelStudio `curl_http_client` library corrupts JSON bodies when POSTing to
 ```
 
 **Workaround:** Use `SIMPLE_WEB_HYBRID_CLIENT` which routes POST/PUT through `curl.exe` process while using libcurl for GET/DELETE.
+
+## Example: WMS REST API Mock
+
+The library includes a full Warehouse Management System (WMS) REST API mock that demonstrates both server and client capabilities. This example uses `simple_sql` for data persistence.
+
+### Server Side (WMS_API_SERVER)
+
+```eiffel
+class WMS_API_SERVER inherit SIMPLE_WEB_SERVER
+
+create make_wms
+
+feature {NONE} -- Initialization
+
+    make_wms (a_port: INTEGER; a_app: WMS_APP)
+        do
+            make (a_port)
+            wms_app := a_app
+            register_routes
+        end
+
+    register_routes
+        do
+            -- Worker routes
+            on_get ("/api/workers", agent handle_get_workers)
+            on_post ("/api/workers", agent handle_create_worker)
+            on_get ("/api/workers/{id}", agent handle_get_worker)
+
+            -- Task routes
+            on_get ("/api/tasks", agent handle_get_tasks)
+            on_post ("/api/tasks/{id}/assign", agent handle_assign_task)
+            on_post ("/api/tasks/{id}/complete", agent handle_complete_task)
+
+            -- Location routes
+            on_get ("/api/locations", agent handle_get_locations)
+        end
+
+feature {NONE} -- Handlers
+
+    handle_create_worker (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+        do
+            if attached req.body_as_json as l_json then
+                if attached l_json.string_item ("name") as l_name then
+                    -- Create worker in database
+                    res.set_created
+                    res.send_json_object (worker_to_json (new_worker))
+                else
+                    res.send_bad_request ("Missing name field")
+                end
+            else
+                res.send_bad_request ("Invalid JSON body")
+            end
+        end
+end
+```
+
+### Client Side (WMS_WORKER_SIMULATOR)
+
+```eiffel
+class WMS_WORKER_SIMULATOR
+
+feature -- Simulation
+
+    simulate_work_day
+        local
+            l_response: SIMPLE_WEB_RESPONSE
+        do
+            -- Get available tasks
+            l_response := client.get (base_url + "/api/tasks?status=pending")
+
+            if l_response.is_success then
+                if attached l_response.body_as_json as l_json then
+                    -- Process tasks...
+                end
+            elseif l_response.is_error then
+                if attached l_response.error_message as l_msg then
+                    print ("Error: " + l_msg + "%N")
+                end
+            end
+        end
+end
+```
+
+### Running the Mock
+
+```batch
+:: Build and run WMS mock tests
+ec.exe -batch -config simple_web.ecf -target wms_api_tests -c_compile -freeze
+ec.exe -batch -config simple_web.ecf -target wms_api_tests -tests
+```
 
 ## Testing
 

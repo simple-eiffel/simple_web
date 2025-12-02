@@ -172,6 +172,49 @@ feature -- Response Sending
 			wsf_response.put_header_text ("Location: " + a_url + "%R%N%R%N")
 		end
 
+	send_error (a_status: INTEGER; a_message: READABLE_STRING_8)
+			-- Send error response with `a_status' code and JSON error `a_message'.
+			-- Convenience method combining set_status + send_json for error responses.
+		require
+			valid_status: a_status >= 400 and a_status < 600
+			message_attached: a_message /= Void
+		do
+			set_status (a_status)
+			send_json ("{%"error%":%"" + a_message + "%"}")
+		ensure
+			status_set: status_code = a_status
+		end
+
+	send_bad_request (a_message: READABLE_STRING_8)
+			-- Send 400 Bad Request with error message.
+		require
+			message_attached: a_message /= Void
+		do
+			send_error (400, a_message)
+		ensure
+			status_set: status_code = 400
+		end
+
+	send_not_found (a_message: READABLE_STRING_8)
+			-- Send 404 Not Found with error message.
+		require
+			message_attached: a_message /= Void
+		do
+			send_error (404, a_message)
+		ensure
+			status_set: status_code = 404
+		end
+
+	send_server_error (a_message: READABLE_STRING_8)
+			-- Send 500 Internal Server Error with error message.
+		require
+			message_attached: a_message /= Void
+		do
+			send_error (500, a_message)
+		ensure
+			status_set: status_code = 500
+		end
+
 feature {NONE} -- Implementation
 
 	send_with_content_type (a_content: READABLE_STRING_8; a_content_type: STRING)

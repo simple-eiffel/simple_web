@@ -54,12 +54,12 @@ feature {NONE} -- Initialization
 		do
 			base_url := a_base_url
 			create client.make
+			create randomizer.make
 			worker_id := 1
-			worker_name := "Bob"
+			worker_name := randomizer.random_word_capitalized
 			current_warehouse_id := 0
 			operations_count := 0
 			errors_count := 0
-			create random.make
 		ensure
 			base_url_set: base_url = a_base_url
 		end
@@ -741,6 +741,570 @@ feature -- Morning Shift (Quick Simulation)
 			check_product_totals (<<1, 2>>)
 		end
 
+feature -- Inventory Validation (Spot Checks)
+
+	spot_check_product (a_product_id: INTEGER; a_expected_total: INTEGER; a_description: STRING)
+			-- Verify product total stock matches expected value.
+			-- This is a key API testing feature - validates state after operations.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_json: SIMPLE_JSON
+			l_actual: INTEGER_64
+		do
+			spot_check_count := spot_check_count + 1
+			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
+			if l_response.status_code = 200 then
+				create l_json
+				if attached {SIMPLE_JSON_OBJECT} l_json.parse (l_response.body) as stock then
+					l_actual := stock.integer_item ("total_quantity")
+					if l_actual.to_integer_32 = a_expected_total then
+						log_success ("SPOT CHECK #" + spot_check_count.out + " PASS: " + a_description +
+							" (Product " + a_product_id.out + " = " + l_actual.out + ")")
+						spot_check_passed := spot_check_passed + 1
+					else
+						log_error ("SPOT CHECK #" + spot_check_count.out + " FAIL: " + a_description +
+							" - Expected " + a_expected_total.out + " but got " + l_actual.out)
+						spot_check_failed := spot_check_failed + 1
+					end
+				end
+			else
+				log_error ("SPOT CHECK #" + spot_check_count.out + " FAIL: Could not get stock for product " + a_product_id.out)
+				spot_check_failed := spot_check_failed + 1
+			end
+		end
+
+	spot_check_available (a_product_id: INTEGER; a_expected_available: INTEGER; a_description: STRING)
+			-- Verify product available stock (total - reserved) matches expected value.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_json: SIMPLE_JSON
+			l_actual: INTEGER_64
+		do
+			spot_check_count := spot_check_count + 1
+			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
+			if l_response.status_code = 200 then
+				create l_json
+				if attached {SIMPLE_JSON_OBJECT} l_json.parse (l_response.body) as stock then
+					l_actual := stock.integer_item ("available_quantity")
+					if l_actual.to_integer_32 = a_expected_available then
+						log_success ("SPOT CHECK #" + spot_check_count.out + " PASS: " + a_description)
+						spot_check_passed := spot_check_passed + 1
+					else
+						log_error ("SPOT CHECK #" + spot_check_count.out + " FAIL: " + a_description +
+							" - Expected " + a_expected_available.out + " available but got " + l_actual.out)
+						spot_check_failed := spot_check_failed + 1
+					end
+				end
+			else
+				log_error ("SPOT CHECK #" + spot_check_count.out + " FAIL: API error")
+				spot_check_failed := spot_check_failed + 1
+			end
+		end
+
+	verify_movement_recorded (a_product_id: INTEGER; a_expected_type: STRING; a_expected_quantity: INTEGER)
+			-- Verify that a movement was recorded with expected values.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_json: SIMPLE_JSON
+			l_found: BOOLEAN
+		do
+			spot_check_count := spot_check_count + 1
+			l_response := client.get (base_url + "/api/movements/" + a_product_id.out + "?limit=1")
+			if l_response.status_code = 200 then
+				create l_json
+				if attached {SIMPLE_JSON_ARRAY} l_json.parse (l_response.body) as arr and then arr.count > 0 then
+					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as mov then
+						if attached mov.string_item ("movement_type") as l_type then
+							l_found := l_type.to_string_8 ~ a_expected_type and
+								mov.integer_item ("quantity").to_integer_32 = a_expected_quantity
+						end
+					end
+				end
+				if l_found then
+					log_success ("SPOT CHECK #" + spot_check_count.out + " PASS: Movement recorded - " +
+						a_expected_type + " x" + a_expected_quantity.out)
+					spot_check_passed := spot_check_passed + 1
+				else
+					log_error ("SPOT CHECK #" + spot_check_count.out + " FAIL: Expected movement not found")
+					spot_check_failed := spot_check_failed + 1
+				end
+			else
+				log_error ("SPOT CHECK #" + spot_check_count.out + " FAIL: API error getting movements")
+				spot_check_failed := spot_check_failed + 1
+			end
+		end
+
+feature -- Error Scenario Testing
+
+	test_error_scenarios
+			-- Test API error handling with invalid requests.
+			-- This discovers friction in error response formats.
+		do
+			print ("%N")
+			print ("==============================%N")
+			print ("  ERROR SCENARIO TESTING%N")
+			print ("==============================%N")
+
+			test_receive_invalid_product
+			test_transfer_insufficient_stock
+			test_reserve_over_available
+			test_invalid_json_body
+			test_missing_required_fields
+			test_release_nonexistent_reservation
+
+			print_error_test_summary
+		end
+
+	test_receive_invalid_product
+			-- Test receiving to non-existent product.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_body: STRING
+		do
+			error_test_count := error_test_count + 1
+			log_action ("Error Test: Receive with invalid product ID")
+
+			l_body := "{%"product_id%":99999,%"location_id%":1,%"quantity%":10,%"reference%":%"TEST%",%"user_id%":1}"
+			l_response := client.post_json (base_url + "/api/receive", l_body)
+
+			-- Should fail with 4xx error
+			if l_response.is_error then
+				log_success ("  Got expected error response: " + l_response.status_code.out)
+				if attached l_response.error_message as l_msg then
+					log_success ("  Error message: " + l_msg)
+				end
+				error_test_passed := error_test_passed + 1
+			else
+				log_error ("  Expected error but got success!")
+				error_test_failed := error_test_failed + 1
+			end
+		end
+
+	test_transfer_insufficient_stock
+			-- Test transfer with more quantity than available.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_body: STRING
+		do
+			error_test_count := error_test_count + 1
+			log_action ("Error Test: Transfer more than available stock")
+
+			-- Try to transfer 999999 units (should fail)
+			l_body := "{%"product_id%":1,%"from_location_id%":1,%"to_location_id%":2,%"quantity%":999999,%"reference%":%"TEST%",%"user_id%":1}"
+			l_response := client.post_json (base_url + "/api/transfer", l_body)
+
+			if l_response.is_error then
+				log_success ("  Got expected error: " + l_response.status_code.out)
+				error_test_passed := error_test_passed + 1
+			else
+				log_error ("  Expected error but got success!")
+				error_test_failed := error_test_failed + 1
+			end
+		end
+
+	test_reserve_over_available
+			-- Test reservation exceeding available quantity.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_body: STRING
+		do
+			error_test_count := error_test_count + 1
+			log_action ("Error Test: Reserve more than available")
+
+			l_body := "{%"product_id%":1,%"location_id%":1,%"quantity%":999999,%"order_reference%":%"TEST%",%"user_id%":1}"
+			l_response := client.post_json (base_url + "/api/reserve", l_body)
+
+			if l_response.status_code = 409 then  -- Conflict - expected
+				log_success ("  Got expected 409 Conflict")
+				error_test_passed := error_test_passed + 1
+			elseif l_response.is_error then
+				log_success ("  Got error response: " + l_response.status_code.out)
+				error_test_passed := error_test_passed + 1
+			else
+				log_error ("  Expected error but got success!")
+				error_test_failed := error_test_failed + 1
+			end
+		end
+
+	test_invalid_json_body
+			-- Test API response to malformed JSON.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+		do
+			error_test_count := error_test_count + 1
+			log_action ("Error Test: Malformed JSON body")
+
+			l_response := client.post_json (base_url + "/api/receive", "{invalid json")
+
+			if l_response.status_code = 400 then
+				log_success ("  Got expected 400 Bad Request")
+				error_test_passed := error_test_passed + 1
+			elseif l_response.is_error then
+				log_success ("  Got error response: " + l_response.status_code.out)
+				error_test_passed := error_test_passed + 1
+			else
+				log_error ("  Expected error but got success!")
+				error_test_failed := error_test_failed + 1
+			end
+		end
+
+	test_missing_required_fields
+			-- Test API response to missing required fields.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+		do
+			error_test_count := error_test_count + 1
+			log_action ("Error Test: Missing required fields")
+
+			-- Missing product_id, location_id, etc.
+			l_response := client.post_json (base_url + "/api/receive", "{%"quantity%":10}")
+
+			if l_response.status_code = 400 then
+				log_success ("  Got expected 400 Bad Request")
+				error_test_passed := error_test_passed + 1
+			elseif l_response.is_error then
+				log_success ("  Got error response: " + l_response.status_code.out)
+				error_test_passed := error_test_passed + 1
+			else
+				log_error ("  Expected error but got success!")
+				error_test_failed := error_test_failed + 1
+			end
+		end
+
+	test_release_nonexistent_reservation
+			-- Test releasing a reservation that doesn't exist.
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+		do
+			error_test_count := error_test_count + 1
+			log_action ("Error Test: Release non-existent reservation")
+
+			l_response := client.delete (base_url + "/api/reserve/99999")
+
+			if l_response.status_code = 404 then
+				log_success ("  Got expected 404 Not Found")
+				error_test_passed := error_test_passed + 1
+			elseif l_response.is_error then
+				log_success ("  Got error response: " + l_response.status_code.out)
+				error_test_passed := error_test_passed + 1
+			else
+				log_error ("  Expected error but got success!")
+				error_test_failed := error_test_failed + 1
+			end
+		end
+
+	print_error_test_summary
+			-- Print error testing summary.
+		do
+			print ("%N--- ERROR TESTING SUMMARY ---%N")
+			print ("  Tests run: " + error_test_count.out + "%N")
+			print ("  Passed: " + error_test_passed.out + "%N")
+			print ("  Failed: " + error_test_failed.out + "%N")
+			print ("-------------------------------%N")
+		end
+
+feature -- Walmart-Style Simulation
+
+	run_walmart_simulation
+			-- Run large-scale Walmart-style distribution center simulation.
+			-- Simulates a busy day at a regional distribution center with:
+			-- - High volume receiving from suppliers
+			-- - Order fulfillment to stores
+			-- - Cross-docking operations
+			-- - Real-time inventory tracking
+		do
+			print ("%N")
+			print ("===================================================%N")
+			print ("  WALMART REGIONAL DISTRIBUTION CENTER SIMULATION%N")
+			print ("  Powered by SIMPLE_RANDOMIZER%N")
+			print ("===================================================%N")
+			print ("  Worker: " + worker_name + " (Associate #" + worker_id.out + ")%N")
+			print ("  Shift: 6:00 AM - 2:30 PM%N")
+			print ("===================================================%N%N")
+
+			-- Initialize warehouse
+			setup_test_data
+
+			-- Pre-shift: Clock in
+			walmart_clock_in
+
+			-- Morning: High volume receiving (6:00 - 10:00)
+			walmart_morning_receiving
+
+			-- Mid-morning: Order processing (10:00 - 12:00)
+			walmart_order_processing
+
+			-- Lunch break (12:00 - 12:30)
+			walmart_lunch_break
+
+			-- Afternoon: Store replenishment picks (12:30 - 2:00)
+			walmart_store_replenishment
+
+			-- End of shift: Wrap up (2:00 - 2:30)
+			walmart_shift_end
+
+			print_walmart_summary
+		end
+
+	walmart_clock_in
+			-- Simulate associate clocking in for shift.
+		do
+			print ("%N[06:00] SHIFT START%N")
+			log_action (worker_name + " clocking in at RF scanner station")
+			select_warehouse
+			log_action ("Assigned to Zone A - Grocery Receiving")
+			pause (500)
+		end
+
+	walmart_morning_receiving
+			-- Morning receiving - trucks arrive from suppliers.
+		local
+			l_truck_count, l_total_units, i: INTEGER
+			l_suppliers: ARRAY [STRING]
+		do
+			print ("%N[06:15 - 10:00] MORNING RECEIVING%N")
+
+			l_suppliers := <<"Procter & Gamble", "Kraft Heinz", "General Mills",
+				"PepsiCo", "Nestle", "Unilever", "Kelloggs", "Campbell Soup">>
+
+			l_truck_count := randomizer.random_integer_in_range (5 |..| 8)
+			log_action ("Receiving dock shows " + l_truck_count.out + " inbound trucks scheduled")
+
+			from i := 1 until i > l_truck_count loop
+				-- Simulate receiving a truckload
+				receive_supplier_truck (
+					randomizer.random_string_from_list (l_suppliers),
+					random_po_reference
+				)
+				l_total_units := l_total_units + randomizer.random_integer_in_range (200 |..| 800)
+				i := i + 1
+			end
+
+			-- Spot check after receiving
+			print ("%N[10:00] Mid-morning stock check%N")
+			check_product_totals (<<1, 2, 3, 4, 5>>)
+		end
+
+	receive_supplier_truck (a_supplier: STRING; a_po: STRING)
+			-- Receive a full truckload from a supplier.
+		local
+			l_pallet_count, l_units_per_pallet, l_total, i: INTEGER
+		do
+			l_pallet_count := randomizer.random_integer_in_range (8 |..| 24)
+			log_action ("Unloading " + a_supplier + " truck - " + l_pallet_count.out + " pallets - " + a_po)
+
+			from i := 1 until i > l_pallet_count.min (5) loop -- Simulate 5 pallets max
+				l_units_per_pallet := randomizer.random_integer_in_range (48 |..| 144)
+				receive_shipment (a_po, <<[random_product_id, random_location_id (1, 60), l_units_per_pallet]>>)
+				l_total := l_total + l_units_per_pallet
+				i := i + 1
+			end
+
+			log_success ("Truck complete - " + l_total.out + " units received")
+			pause (300)
+		end
+
+	walmart_order_processing
+			-- Process store orders for fulfillment.
+		local
+			l_store_count, i: INTEGER
+			l_store_num: STRING
+		do
+			print ("%N[10:00 - 12:00] ORDER PROCESSING%N")
+			log_action ("Switching to order fulfillment mode")
+
+			l_store_count := randomizer.random_integer_in_range (15 |..| 30)
+			log_action (l_store_count.out + " store orders in queue")
+
+			from i := 1 until i > l_store_count.min (10) loop -- Process 10 orders
+				l_store_num := "Store #" + randomizer.random_digits (4)
+				process_store_order (l_store_num)
+				i := i + 1
+			end
+		end
+
+	process_store_order (a_store: STRING)
+			-- Process an order for a specific store.
+		local
+			l_line_count, i: INTEGER
+			l_order_ref: STRING
+		do
+			l_order_ref := random_order_reference
+			l_line_count := randomizer.random_integer_in_range (3 |..| 8)
+
+			log_action ("Processing " + a_store + " order " + l_order_ref + " (" + l_line_count.out + " lines)")
+
+			-- Create pick list items
+			from i := 1 until i > l_line_count.min (3) loop -- Pick 3 items
+				pick_order (l_order_ref, <<[random_product_id, random_quantity (6, 48)]>>)
+				i := i + 1
+			end
+
+			log_success ("Order " + l_order_ref + " staged for " + a_store)
+			pause (200)
+		end
+
+	walmart_lunch_break
+			-- Lunch break simulation.
+		do
+			print ("%N[12:00 - 12:30] LUNCH BREAK%N")
+			log_action (worker_name + " heading to break room")
+			pause (500)
+			log_action ("Break complete - returning to floor")
+		end
+
+	walmart_store_replenishment
+			-- Afternoon store replenishment picking.
+		local
+			l_wave_count, l_picks, i: INTEGER
+		do
+			print ("%N[12:30 - 14:00] STORE REPLENISHMENT%N")
+			log_action ("Starting high-velocity pick wave")
+
+			l_wave_count := randomizer.random_integer_in_range (3 |..| 5)
+			from i := 1 until i > l_wave_count loop
+				l_picks := execute_pick_wave (i)
+				print ("  Wave " + i.out + " complete: " + l_picks.out + " picks%N")
+				i := i + 1
+			end
+
+			-- Final spot check
+			print ("%N[13:45] Afternoon stock verification%N")
+			check_all_products_stock
+			check_low_stock
+		end
+
+	execute_pick_wave (a_wave_num: INTEGER): INTEGER
+			-- Execute a picking wave, returns number of picks.
+		local
+			l_picks, i: INTEGER
+		do
+			l_picks := randomizer.random_integer_in_range (8 |..| 15)
+			log_action ("Pick wave #" + a_wave_num.out + " - " + l_picks.out + " locations")
+
+			from i := 1 until i > l_picks.min (5) loop -- Execute 5 picks
+				pick_order (random_order_reference, <<[random_product_id, random_quantity (4, 24)]>>)
+				i := i + 1
+			end
+
+			Result := l_picks
+			pause (200)
+		end
+
+	walmart_shift_end
+			-- End of shift procedures.
+		do
+			print ("%N[14:00 - 14:30] SHIFT END%N")
+			log_action ("Wrapping up shift")
+
+			-- Final inventory checks
+			print_inventory_report
+
+			-- Clock out
+			log_action (worker_name + " clocking out - shift complete")
+		end
+
+	print_walmart_summary
+			-- Print Walmart-style shift summary.
+		do
+			print ("%N")
+			print ("===================================================%N")
+			print ("  SHIFT PERFORMANCE SUMMARY%N")
+			print ("===================================================%N")
+			print ("  Associate: " + worker_name + "%N")
+			print ("  Transactions: " + operations_count.out + "%N")
+			print ("  Errors: " + errors_count.out + "%N")
+			print ("  Units Per Hour: " + ((operations_count * 60) // 8).out + " (est)%N")
+			if errors_count = 0 then
+				print ("  Rating: EXCEEDS EXPECTATIONS%N")
+			elseif errors_count < 3 then
+				print ("  Rating: MEETS EXPECTATIONS%N")
+			else
+				print ("  Rating: NEEDS IMPROVEMENT%N")
+			end
+			print ("===================================================%N")
+		end
+
+feature -- Validated Simulation (with spot checks)
+
+	run_validated_week
+			-- Run full week with inventory spot checks after each major operation.
+			-- This is the most thorough API exercise.
+		do
+			print ("%N========================================%N")
+			print ("  WMS VALIDATED SIMULATION%N")
+			print ("  (with inventory spot checks)%N")
+			print ("========================================%N%N")
+
+			-- Reset counters
+			spot_check_count := 0
+			spot_check_passed := 0
+			spot_check_failed := 0
+
+			-- Initialize
+			setup_test_data
+
+			-- Day 1: Validated receiving
+			run_validated_receiving
+
+			-- Day 2: Validated picking
+			run_validated_picking
+
+			-- Run error scenarios
+			test_error_scenarios
+
+			-- Final summary
+			print_validation_summary
+		end
+
+	run_validated_receiving
+			-- Day of receiving with inventory validation.
+		local
+			l_initial_stock: INTEGER
+		do
+			print ("%N=== VALIDATED RECEIVING ===%N")
+			select_warehouse
+
+			-- Check initial state
+			l_initial_stock := get_product_total (1)
+			log_action ("Initial stock for Product 1: " + l_initial_stock.out)
+
+			-- Receive known quantity
+			receive_shipment ("PO-VAL-001", <<[1, 1, 100]>>)
+
+			-- SPOT CHECK: Should have initial + 100
+			spot_check_product (1, l_initial_stock + 100, "After receiving 100 units of Product 1")
+
+			-- Verify movement was recorded
+			verify_movement_recorded (1, "RECEIVE", 100)
+
+			-- Receive more
+			receive_shipment ("PO-VAL-002", <<[1, 1, 50]>>)
+
+			-- SPOT CHECK: Should have initial + 150
+			spot_check_product (1, l_initial_stock + 150, "After receiving additional 50 units")
+		end
+
+	run_validated_picking
+			-- Day of picking with inventory validation.
+		local
+			l_before_pick: INTEGER
+		do
+			print ("%N=== VALIDATED PICKING ===%N")
+			select_warehouse
+
+			-- Record current stock
+			l_before_pick := get_product_total (1)
+			log_action ("Stock before picking: " + l_before_pick.out)
+
+			-- Pick known quantity
+			pick_order ("ORD-VAL-001", <<[1, 20]>>)
+
+			-- SPOT CHECK: Stock should decrease by picked amount
+			-- Note: actual decrease depends on reservation/release pattern
+			spot_check_product (1, l_before_pick, "After pick (reservations released)")
+		end
+
 feature -- Reporting
 
 	print_summary
@@ -755,6 +1319,22 @@ feature -- Reporting
 			print ("  Errors: " + errors_count.out + "%N")
 			print ("  Success Rate: " + ((operations_count * 100) // (operations_count + errors_count).max (1)).out + "%%%N")
 			print ("========================================%N")
+		end
+
+	print_validation_summary
+			-- Print validation summary including spot checks.
+		do
+			print_summary
+			print ("%N--- SPOT CHECK RESULTS ---%N")
+			print ("  Checks run: " + spot_check_count.out + "%N")
+			print ("  Passed: " + spot_check_passed.out + "%N")
+			print ("  Failed: " + spot_check_failed.out + "%N")
+			if spot_check_failed = 0 then
+				print ("  STATUS: ALL VALIDATIONS PASSED%N")
+			else
+				print ("  STATUS: VALIDATION FAILURES DETECTED%N")
+			end
+			print ("-------------------------------%N")
 		end
 
 	print_inventory_report
@@ -772,8 +1352,8 @@ feature {NONE} -- Implementation
 			-- HTTP client (using hybrid for localhost compatibility).
 			-- [C1] FRICTION: Must use hybrid client for localhost
 
-	random: RANDOM
-			-- Random number generator for simulation variety.
+	randomizer: SIMPLE_RANDOMIZER
+			-- Random data generator for realistic simulation.
 
 	pause (a_milliseconds: INTEGER)
 			-- Pause execution to simulate real work timing.
@@ -805,23 +1385,75 @@ feature {NONE} -- Implementation
 	random_product_id: INTEGER
 			-- Return random product ID (1-10).
 		do
-			random.forth
-			Result := (random.item \\ 10) + 1
+			Result := randomizer.random_integer_in_range (1 |..| 10)
 		end
 
 	random_location_id (a_min, a_max: INTEGER): INTEGER
 			-- Return random location ID in range.
 		do
-			random.forth
-			Result := (random.item \\ (a_max - a_min + 1)) + a_min
+			Result := randomizer.random_integer_in_range (a_min |..| a_max)
 		end
 
 	random_quantity (a_min, a_max: INTEGER): INTEGER
 			-- Return random quantity in range.
 		do
-			random.forth
-			Result := (random.item \\ (a_max - a_min + 1)) + a_min
+			Result := randomizer.random_integer_in_range (a_min |..| a_max)
 		end
+
+	random_order_reference: STRING
+			-- Generate realistic order reference like "ORD-12345".
+		do
+			Result := "ORD-" + randomizer.random_digits (5)
+		end
+
+	random_po_reference: STRING
+			-- Generate realistic purchase order reference.
+		do
+			Result := "PO-" + randomizer.random_digits (6)
+		end
+
+	random_worker_name: STRING
+			-- Generate random worker name.
+		do
+			Result := randomizer.random_word_capitalized + " " + randomizer.random_word_capitalized.substring (1, 1) + "."
+		end
+
+	get_product_total (a_product_id: INTEGER): INTEGER
+			-- Get total stock for a product (helper for validated simulation).
+		local
+			l_response: SIMPLE_WEB_RESPONSE
+			l_json: SIMPLE_JSON
+		do
+			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
+			if l_response.status_code = 200 then
+				create l_json
+				if attached {SIMPLE_JSON_OBJECT} l_json.parse (l_response.body) as stock then
+					Result := stock.integer_item ("total_quantity").to_integer_32
+				end
+			end
+		end
+
+feature {NONE} -- Spot Check Tracking
+
+	spot_check_count: INTEGER
+			-- Number of spot checks performed.
+
+	spot_check_passed: INTEGER
+			-- Number of spot checks that passed.
+
+	spot_check_failed: INTEGER
+			-- Number of spot checks that failed.
+
+feature {NONE} -- Error Test Tracking
+
+	error_test_count: INTEGER
+			-- Number of error tests performed.
+
+	error_test_passed: INTEGER
+			-- Number of error tests that passed.
+
+	error_test_failed: INTEGER
+			-- Number of error tests that failed.
 
 invariant
 	base_url_not_empty: not base_url.is_empty

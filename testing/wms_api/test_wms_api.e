@@ -204,7 +204,7 @@ feature -- Test: Worker Simulator
 
 			assert ("simulator created", l_sim /= Void)
 			assert ("base url set", l_sim.base_url ~ "http://localhost:8080")
-			assert ("worker name set", l_sim.worker_name ~ "Bob")
+			assert ("worker name set", not l_sim.worker_name.is_empty)
 			assert ("operations count zero", l_sim.operations_count = 0)
 		end
 

@@ -83,6 +83,25 @@ feature -- Status Report
 			Result := status_code >= 500 and status_code < 600
 		end
 
+	is_error: BOOLEAN
+			-- Is this an error response (4xx or 5xx)?
+		do
+			Result := is_client_error or is_server_error
+		end
+
+	error_message: detachable STRING
+			-- Extract error message from JSON body if present.
+			-- Looks for {"error": "message"} pattern.
+		do
+			if attached body_as_json as l_json and then l_json.is_object then
+				if attached l_json.as_object as l_obj and then l_obj.has_key ("error") then
+					if attached l_obj.string_item ("error") as l_msg then
+						Result := l_msg.to_string_8
+					end
+				end
+			end
+		end
+
 	has_header (a_name: STRING): BOOLEAN
 			-- Does response have header with given name?
 		require

@@ -64,6 +64,7 @@
 		<capability>
 			<concurrency use="thread"/>
 		</capability>
+		<library name="simple_randomizer" location="$SIMPLE_RANDOMIZER\simple_randomizer.ecf"/>
 		<library name="simple_sql" location="$SIMPLE_SQL\simple_sql.ecf"/>
 		<cluster name="wms_api_src" location=".\src\wms_api\" recursive="true"/>
 		<cluster name="wms_domain" location="$SIMPLE_SQL\src\wms\" recursive="true">
