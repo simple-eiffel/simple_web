@@ -48,6 +48,9 @@ feature {NONE} -- Route Dispatch
 		do
 			l_path := a_request.path
 
+			-- Debug: show route count
+			print ("Dispatch: " + a_request.method + " " + l_path.to_string_8 + " (routes in router: " + router.routes.count.out + ")%N")
+
 			-- Find matching route using shared router
 			l_route := router.find_route (a_request.method, l_path)
 
@@ -78,7 +81,7 @@ feature {NONE} -- Implementation
 
 	router: SIMPLE_WEB_SERVER_ROUTER
 			-- Shared router singleton.
-		once
+		once ("PROCESS")
 			create Result
 		ensure
 			result_attached: Result /= Void

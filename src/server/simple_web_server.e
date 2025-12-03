@@ -159,7 +159,7 @@ feature {NONE} -- Implementation
 
 	router: SIMPLE_WEB_SERVER_ROUTER
 			-- Shared router singleton (same instance used by execution).
-		once
+		once ("PROCESS")
 			create Result
 		ensure
 			result_attached: Result /= Void
@@ -176,6 +176,7 @@ feature {NONE} -- Implementation
 		do
 			create l_route.make (a_method, a_pattern, a_handler)
 			router.add_route (l_route)
+			print ("  Registered: " + a_method + " " + a_pattern + " (total: " + router.routes.count.out + ")%N")
 		end
 
 invariant

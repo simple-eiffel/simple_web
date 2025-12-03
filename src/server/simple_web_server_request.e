@@ -222,12 +222,15 @@ feature -- Headers
 feature -- Body
 
 	body: STRING_8
-			-- Request body as string.
+			-- Request body as string (cached after first read).
 		local
 			l_length: INTEGER
 		do
-			if is_mock then
+			if attached cached_body as l_cached then
+				Result := l_cached
+			elseif is_mock then
 				Result := mock_body
+				cached_body := Result
 			elseif attached wsf_request as l_request then
 				l_length := content_length.to_integer_32.max (0)
 				if l_length > 0 and then not l_request.input.end_of_input then
@@ -236,12 +239,18 @@ feature -- Body
 				else
 					create Result.make_empty
 				end
+				cached_body := Result
 			else
 				create Result.make_empty
+				cached_body := Result
 			end
 		ensure
 			result_attached: Result /= Void
+			cached: cached_body /= Void
 		end
+
+	cached_body: detachable STRING_8
+			-- Cached body content (stream can only be read once).
 
 	body_as_json: detachable SIMPLE_JSON_OBJECT
 			-- Parse body as JSON object.
@@ -257,6 +266,45 @@ feature -- Body
 					Result := l_value.as_object
 				end
 			end
+		end
+
+	form_data: HASH_TABLE [STRING_32, STRING_32]
+			-- Parse URL-encoded form body into key-value pairs.
+			-- Handles application/x-www-form-urlencoded format.
+		local
+			l_body: STRING_8
+			l_pairs: LIST [STRING_8]
+			l_parts: LIST [STRING_8]
+			l_key, l_value: STRING_32
+		do
+			create Result.make (10)
+			l_body := body
+			if not l_body.is_empty then
+				l_pairs := l_body.split ('&')
+				across l_pairs as al_pair loop
+					l_parts := al_pair.split ('=')
+					if l_parts.count >= 1 then
+						l_key := url_decode (l_parts.first)
+						if l_parts.count >= 2 then
+							l_value := url_decode (l_parts.i_th (2))
+						else
+							create l_value.make_empty
+						end
+						Result.force (l_value, l_key)
+					end
+				end
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
+	form_parameter (a_name: READABLE_STRING_GENERAL): detachable STRING_32
+			-- Get form parameter value by name.
+			-- Returns Void if not found.
+		require
+			name_attached: a_name /= Void
+		do
+			Result := form_data.item (a_name.to_string_32)
 		end
 
 feature -- Status
@@ -333,6 +381,60 @@ feature {NONE} -- Implementation
 			create Result
 		ensure
 			result_attached: Result /= Void
+		end
+
+	url_decode (a_encoded: STRING_8): STRING_32
+			-- Decode URL-encoded string (handles %XX and + for space).
+		local
+			i: INTEGER
+			l_code: INTEGER
+			l_hex: STRING_8
+		do
+			create Result.make (a_encoded.count)
+			from i := 1 until i > a_encoded.count loop
+				if a_encoded.item (i) = '%%' and then i + 2 <= a_encoded.count then
+					l_hex := a_encoded.substring (i + 1, i + 2)
+					if l_hex.count = 2 and then l_hex.item (1).is_hexa_digit and then l_hex.item (2).is_hexa_digit then
+						l_code := hex_to_integer (l_hex)
+						Result.append_character (l_code.to_character_32)
+						i := i + 3
+					else
+						Result.append_character ('%%')
+						i := i + 1
+					end
+				elseif a_encoded.item (i) = '+' then
+					Result.append_character (' ')
+					i := i + 1
+				else
+					Result.append_character (a_encoded.item (i))
+					i := i + 1
+				end
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
+	hex_to_integer (a_hex: STRING_8): INTEGER
+			-- Convert 2-character hex string to integer.
+		require
+			valid_hex: a_hex.count = 2
+		local
+			l_high, l_low: INTEGER
+		do
+			l_high := hex_digit_value (a_hex.item (1))
+			l_low := hex_digit_value (a_hex.item (2))
+			Result := l_high * 16 + l_low
+		end
+
+	hex_digit_value (c: CHARACTER): INTEGER
+			-- Value of hex digit character.
+		do
+			inspect c
+			when '0'..'9' then Result := c.code - ('0').code
+			when 'a'..'f' then Result := c.code - ('a').code + 10
+			when 'A'..'F' then Result := c.code - ('A').code + 10
+			else Result := 0
+			end
 		end
 
 invariant
