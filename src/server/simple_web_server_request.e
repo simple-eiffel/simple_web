@@ -175,6 +175,8 @@ feature -- Path Parameters
 			name_attached: a_name /= Void
 		do
 			Result := path_parameters.has (a_name.to_string_32)
+		ensure
+			definition: Result = path_parameters.has (a_name.to_string_32)
 		end
 
 feature -- Headers
@@ -313,30 +315,40 @@ feature -- Status
 			-- Is this a GET request?
 		do
 			Result := method.is_case_insensitive_equal ("GET")
+		ensure
+			definition: Result = method.is_case_insensitive_equal ("GET")
 		end
 
 	is_post: BOOLEAN
 			-- Is this a POST request?
 		do
 			Result := method.is_case_insensitive_equal ("POST")
+		ensure
+			definition: Result = method.is_case_insensitive_equal ("POST")
 		end
 
 	is_put: BOOLEAN
 			-- Is this a PUT request?
 		do
 			Result := method.is_case_insensitive_equal ("PUT")
+		ensure
+			definition: Result = method.is_case_insensitive_equal ("PUT")
 		end
 
 	is_delete: BOOLEAN
 			-- Is this a DELETE request?
 		do
 			Result := method.is_case_insensitive_equal ("DELETE")
+		ensure
+			definition: Result = method.is_case_insensitive_equal ("DELETE")
 		end
 
 	is_patch: BOOLEAN
 			-- Is this a PATCH request?
 		do
 			Result := method.is_case_insensitive_equal ("PATCH")
+		ensure
+			definition: Result = method.is_case_insensitive_equal ("PATCH")
 		end
 
 feature {SIMPLE_WEB_SERVER_EXECUTION} -- Internal
@@ -362,6 +374,8 @@ feature -- Mock Helpers
 			value_attached: a_value /= Void
 		do
 			mock_headers.force (a_value, a_name.as_upper)
+		ensure
+			header_set: mock_headers.has (a_name.as_upper)
 		end
 
 	set_mock_body (a_body: STRING_8)
@@ -371,6 +385,8 @@ feature -- Mock Helpers
 			body_attached: a_body /= Void
 		do
 			mock_body := a_body
+		ensure
+			body_set: mock_body = a_body
 		end
 
 feature {NONE} -- Implementation

@@ -63,30 +63,40 @@ feature -- Status Report
 			-- Is response successful (2xx status)?
 		do
 			Result := status_code >= 200 and status_code < 300
+		ensure
+			definition: Result = (status_code >= 200 and status_code < 300)
 		end
 
 	is_ok: BOOLEAN
 			-- Is status 200 OK?
 		do
 			Result := status_code = Status_ok
+		ensure
+			definition: Result = (status_code = 200)
 		end
 
 	is_client_error: BOOLEAN
 			-- Is client error (4xx status)?
 		do
 			Result := status_code >= 400 and status_code < 500
+		ensure
+			definition: Result = (status_code >= 400 and status_code < 500)
 		end
 
 	is_server_error: BOOLEAN
 			-- Is server error (5xx status)?
 		do
 			Result := status_code >= 500 and status_code < 600
+		ensure
+			definition: Result = (status_code >= 500 and status_code < 600)
 		end
 
 	is_error: BOOLEAN
 			-- Is this an error response (4xx or 5xx)?
 		do
 			Result := is_client_error or is_server_error
+		ensure
+			definition: Result = (is_client_error or is_server_error)
 		end
 
 	error_message: detachable STRING

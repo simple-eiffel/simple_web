@@ -145,6 +145,8 @@ feature -- Response Sending
 			text_attached: a_text /= Void
 		do
 			send_with_content_type (a_text, "text/plain; charset=utf-8")
+		ensure
+			mock_body_set: is_mock implies mock_body.same_string (a_text.to_string_8)
 		end
 
 	send_html (a_html: READABLE_STRING_8)
@@ -153,6 +155,8 @@ feature -- Response Sending
 			html_attached: a_html /= Void
 		do
 			send_with_content_type (a_html, "text/html; charset=utf-8")
+		ensure
+			mock_body_set: is_mock implies mock_body.same_string (a_html.to_string_8)
 		end
 
 	send_json (a_json: READABLE_STRING_8)
@@ -161,6 +165,8 @@ feature -- Response Sending
 			json_attached: a_json /= Void
 		do
 			send_with_content_type (a_json, "application/json; charset=utf-8")
+		ensure
+			mock_body_set: is_mock implies mock_body.same_string (a_json.to_string_8)
 		end
 
 	send_json_object (a_object: SIMPLE_JSON_OBJECT)
@@ -189,6 +195,8 @@ feature -- Response Sending
 				l_response.set_status_code (status_code)
 				l_response.put_header_text ("Content-Length: 0%R%N%R%N")
 			end
+		ensure
+			mock_body_empty: is_mock implies mock_body.is_empty
 		end
 
 	send_redirect (a_url: READABLE_STRING_8)
@@ -205,6 +213,9 @@ feature -- Response Sending
 				l_response.set_status_code (status_code)
 				l_response.put_header_text ("Location: " + a_url + "%R%N%R%N")
 			end
+		ensure
+			redirect_status: status_code = 302 or status_code = old status_code
+			mock_location_set: is_mock implies mock_headers.has ("Location")
 		end
 
 	send_error (a_status: INTEGER; a_message: READABLE_STRING_8)
@@ -263,6 +274,8 @@ feature -- Header Setting
 			elseif attached wsf_response as l_response then
 				l_response.put_header_text (a_name + ": " + a_value + "%R%N")
 			end
+		ensure
+			mock_header_set: is_mock implies mock_headers.has (a_name)
 		end
 
 feature {NONE} -- Implementation

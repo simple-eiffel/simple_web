@@ -38,6 +38,7 @@ feature -- Route Registration
 			routes.extend (a_route)
 		ensure
 			route_added: routes.has (a_route)
+			count_increased: routes.count = old routes.count + 1
 		end
 
 	clear_routes
@@ -90,6 +91,9 @@ feature -- Matching
 				end
 				i := i + 1
 			end
+		ensure
+			found_matches: attached Result implies Result.matches (a_method, a_path)
+			found_in_routes: attached Result implies routes.has (Result)
 		end
 
 note

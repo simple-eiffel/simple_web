@@ -54,6 +54,8 @@ feature -- Matching
 			if method.is_case_insensitive_equal (a_method) then
 				Result := path_matches (a_path)
 			end
+		ensure
+			method_mismatch_no_match: not method.is_case_insensitive_equal (a_method) implies not Result
 		end
 
 	path_matches (a_path: STRING_32): BOOLEAN
@@ -208,6 +210,9 @@ feature {NONE} -- Implementation
 				end
 				i := i + 1
 			end
+		ensure
+			result_not_void: Result /= Void
+			result_at_least_as_long: Result.count >= s.count
 		end
 
 invariant

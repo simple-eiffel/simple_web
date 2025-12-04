@@ -129,6 +129,7 @@ feature -- Element Change: Headers
 			Result := with_header (Header_content_type, a_content_type)
 		ensure
 			returns_self: Result = Current
+			content_type_set: headers.has (Header_content_type)
 		end
 
 	with_json_content_type: SIMPLE_WEB_REQUEST
@@ -137,6 +138,7 @@ feature -- Element Change: Headers
 			Result := with_content_type (Content_type_json)
 		ensure
 			returns_self: Result = Current
+			json_content_type_set: attached headers.item (Header_content_type) as v and then v.same_string (Content_type_json)
 		end
 
 	with_bearer_token (a_token: STRING): SIMPLE_WEB_REQUEST
@@ -148,6 +150,7 @@ feature -- Element Change: Headers
 			Result := with_header (Header_authorization, Auth_bearer_prefix + a_token)
 		ensure
 			returns_self: Result = Current
+			authorization_set: headers.has (Header_authorization)
 		end
 
 	with_api_key (a_key: STRING): SIMPLE_WEB_REQUEST
@@ -159,6 +162,7 @@ feature -- Element Change: Headers
 			Result := with_header ("x-api-key", a_key)
 		ensure
 			returns_self: Result = Current
+			api_key_set: headers.has ("x-api-key")
 		end
 
 feature -- Element Change: Body
@@ -183,6 +187,8 @@ feature -- Element Change: Body
 			Result := with_body (a_json).with_json_content_type
 		ensure
 			returns_self: Result = Current
+			body_set: body.same_string (a_json)
+			json_content_type_set: headers.has (Header_content_type)
 		end
 
 feature -- Element Change: Timeout
