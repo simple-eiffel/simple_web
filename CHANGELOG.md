@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Testing config updates, AutoTest fixes, .gitignore cleanup
+- Add SCOOP concurrency capability
+- Migrate to simple_testing library
+- Add send_binary method for serving static files
+- Remove redundant result_not_void postconditions
+- Add comprehensive postconditions to core HTTP classes
+- Add form data parsing and body caching to request class
+- Add Todo API mock demonstrating simple_json friction fixes
+- Add input sanitization and security improvements
+- Add middleware docs to README, update AI productivity report
+
 ## [1.0.0] - 2025-12-08
 
 ### Added
