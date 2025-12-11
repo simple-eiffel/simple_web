@@ -17,14 +17,17 @@
         <div class="badges">
             <span class="badge badge-version">v1.0.0</span>
             <span class="badge badge-license">MIT</span>
+            <span class="badge badge-dbc">DbC Enforced</span>
         </div>
     </header>
 
     <nav>
         <ul>
             <li><a href="#overview">Overview</a></li>
-            <li><a href="#quick-start">Quick Start</a></li>
-            <li><a href="#features">Features</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
             <li><a href="https://github.com/simple-eiffel/simple_web">GitHub</a></li>
         </ul>
     </nav>
@@ -45,20 +48,33 @@
         <section id="quick-start">
             <h2>Quick Start</h2>
 
-            <div class="quick-start">
-                <h3>Installation</h3>
-                <p>Add to your ECF file:</p>
+            <h3>Installation</h3>
+            <ol>
+                <li>Set environment variable:
+<pre><code>export SIMPLE_WEB=/path/to/simple_web</code></pre>
+                </li>
+                <li>Add to your ECF file:
 <pre><code>&lt;library name="simple_web" location="$SIMPLE_WEB/simple_web.ecf"/&gt;</code></pre>
-            </div>
+                </li>
+            </ol>
 
             <h3>HTTP Server</h3>
 <pre><code><span class="keyword">local</span>
     server: <span class="type">SIMPLE_WEB_SERVER</span>
 <span class="keyword">do</span>
     <span class="keyword">create</span> server.make (8080)
-    server.on_get (<span class="string">"/api/users/{id}"</span>, agent handle_user)
+    server.on_get (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> handle_user)
     server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_CORS_MIDDLEWARE</span>}.make)
     server.start
+<span class="keyword">end</span></code></pre>
+
+            <h3>HTTP Client</h3>
+<pre><code><span class="keyword">local</span>
+    client: <span class="type">SIMPLE_WEB_CLIENT</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> client.make
+    response := client.get (<span class="string">"https://api.example.com/users"</span>)
+    response := client.post_json (url, <span class="string">'{"name": "Alice"}'</span>)
 <span class="keyword">end</span></code></pre>
 
             <h3>AI Client</h3>
@@ -71,23 +87,55 @@
         </section>
 
         <section id="features">
-            <h2>Features</h2>
-            <ul>
-                <li><strong>HTTP Client</strong> - Fluent request builder, libcurl &amp; hybrid modes</li>
-                <li><strong>HTTP Server</strong> - Agent-based routing with {param} support</li>
-                <li><strong>AI Clients</strong> - Ollama, Claude, OpenAI, Grok ready-to-use</li>
-                <li><strong>Middleware</strong> - Logging, CORS, Auth (Bearer/Basic/API key)</li>
-                <li><strong>Security</strong> - Input sanitization (XSS, path traversal, header injection)</li>
-                <li><strong>JSON Support</strong> - Request/response JSON handling</li>
-                <li>95 tests covering client, server, middleware</li>
-                <li>Full Design by Contract support</li>
+            <h2>Key Features</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>HTTP Client</h3>
+                    <p>Fluent request builder, libcurl & hybrid modes for reliable requests.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>HTTP Server</h3>
+                    <p>Agent-based routing with {param} path parameters.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>AI Clients</h3>
+                    <p>Ready-to-use clients for Ollama, Claude, OpenAI, and Grok.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Middleware</h3>
+                    <p>Logging, CORS, Auth (Bearer/Basic/API key) middleware.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Security</h3>
+                    <p>Input sanitization for XSS, path traversal, header injection.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>JSON Support</h3>
+                    <p>Seamless JSON request/response handling with simple_json.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="documentation">
+            <h2>Documentation</h2>
+            <ul class="doc-links">
+                <li><a href="user-guide.html"><strong>User Guide</strong></a> - Complete tutorial with examples</li>
+                <li><a href="api-reference.html"><strong>API Reference</strong></a> - Full feature documentation</li>
+                <li><a href="architecture.html"><strong>Architecture</strong></a> - Internal design and rationale</li>
+                <li><a href="cookbook.html"><strong>Cookbook</strong></a> - Real-world recipes and patterns</li>
             </ul>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 simple_* ecosystem. MIT License.</p>
-        <p><a href="https://github.com/simple-eiffel">GitHub</a></p>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem of focused, single-purpose Eiffel libraries.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
     </footer>
 </body>
 </html>

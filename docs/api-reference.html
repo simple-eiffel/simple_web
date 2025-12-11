@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - simple_web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_web</h1>
+        <p class="tagline">API Reference</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html" class="active">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_web">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="client-classes">
+            <h2>HTTP Client Classes</h2>
+
+            <h3>SIMPLE_WEB_CLIENT</h3>
+            <p>Primary HTTP client for making web requests.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code></code></td>
+                    <td>Initialize HTTP client.</td>
+                </tr>
+                <tr>
+                    <td><code>get</code></td>
+                    <td><code>(a_url: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Execute GET request.</td>
+                </tr>
+                <tr>
+                    <td><code>post</code></td>
+                    <td><code>(a_url, a_body: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Execute POST with body.</td>
+                </tr>
+                <tr>
+                    <td><code>post_json</code></td>
+                    <td><code>(a_url, a_json: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Execute POST with JSON body (sets Content-Type).</td>
+                </tr>
+                <tr>
+                    <td><code>put</code></td>
+                    <td><code>(a_url, a_body: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Execute PUT request.</td>
+                </tr>
+                <tr>
+                    <td><code>delete</code></td>
+                    <td><code>(a_url: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Execute DELETE request.</td>
+                </tr>
+                <tr>
+                    <td><code>execute</code></td>
+                    <td><code>(a_request: SIMPLE_WEB_REQUEST): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Execute custom request.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_HYBRID_CLIENT</h3>
+            <p>HTTP client that uses curl.exe process for localhost POST requests (workaround for libcurl issue).</p>
+            <p>Same API as <code>SIMPLE_WEB_CLIENT</code>.</p>
+
+            <h3>SIMPLE_WEB_REQUEST</h3>
+            <p>Fluent request builder.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make_get</code></td>
+                    <td><code>(a_url: STRING)</code></td>
+                    <td>Create GET request.</td>
+                </tr>
+                <tr>
+                    <td><code>make_post</code></td>
+                    <td><code>(a_url: STRING)</code></td>
+                    <td>Create POST request.</td>
+                </tr>
+                <tr>
+                    <td><code>make_put</code></td>
+                    <td><code>(a_url: STRING)</code></td>
+                    <td>Create PUT request.</td>
+                </tr>
+                <tr>
+                    <td><code>make_delete</code></td>
+                    <td><code>(a_url: STRING)</code></td>
+                    <td>Create DELETE request.</td>
+                </tr>
+                <tr>
+                    <td><code>with_body</code></td>
+                    <td><code>(a_body: STRING): like Current</code></td>
+                    <td>Set request body.</td>
+                </tr>
+                <tr>
+                    <td><code>with_json_body</code></td>
+                    <td><code>(a_json: STRING): like Current</code></td>
+                    <td>Set JSON body (sets Content-Type).</td>
+                </tr>
+                <tr>
+                    <td><code>with_header</code></td>
+                    <td><code>(a_name, a_value: STRING): like Current</code></td>
+                    <td>Add custom header.</td>
+                </tr>
+                <tr>
+                    <td><code>with_bearer_token</code></td>
+                    <td><code>(a_token: STRING): like Current</code></td>
+                    <td>Add Bearer authorization.</td>
+                </tr>
+                <tr>
+                    <td><code>with_basic_auth</code></td>
+                    <td><code>(a_user, a_pass: STRING): like Current</code></td>
+                    <td>Add Basic authorization.</td>
+                </tr>
+                <tr>
+                    <td><code>with_api_key</code></td>
+                    <td><code>(a_key: STRING): like Current</code></td>
+                    <td>Add X-API-Key header.</td>
+                </tr>
+                <tr>
+                    <td><code>with_timeout</code></td>
+                    <td><code>(a_ms: INTEGER): like Current</code></td>
+                    <td>Set timeout in milliseconds.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_RESPONSE</h3>
+            <p>HTTP response wrapper.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>status_code</code></td>
+                    <td><code>: INTEGER</code></td>
+                    <td>HTTP status code.</td>
+                </tr>
+                <tr>
+                    <td><code>body</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>Response body.</td>
+                </tr>
+                <tr>
+                    <td><code>is_success</code></td>
+                    <td><code>: BOOLEAN</code></td>
+                    <td>Is status 2xx?</td>
+                </tr>
+                <tr>
+                    <td><code>is_client_error</code></td>
+                    <td><code>: BOOLEAN</code></td>
+                    <td>Is status 4xx?</td>
+                </tr>
+                <tr>
+                    <td><code>is_server_error</code></td>
+                    <td><code>: BOOLEAN</code></td>
+                    <td>Is status 5xx?</td>
+                </tr>
+                <tr>
+                    <td><code>header</code></td>
+                    <td><code>(a_name: STRING): detachable STRING</code></td>
+                    <td>Get response header.</td>
+                </tr>
+                <tr>
+                    <td><code>has_header</code></td>
+                    <td><code>(a_name: STRING): BOOLEAN</code></td>
+                    <td>Check if header exists.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="ai-clients">
+            <h2>AI Client Classes</h2>
+
+            <h3>SIMPLE_WEB_OLLAMA_CLIENT</h3>
+            <p>Client for local Ollama API.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code></code></td>
+                    <td>Create client (localhost:11434).</td>
+                </tr>
+                <tr>
+                    <td><code>make_with_host</code></td>
+                    <td><code>(a_host: STRING)</code></td>
+                    <td>Create client with custom host.</td>
+                </tr>
+                <tr>
+                    <td><code>generate</code></td>
+                    <td><code>(a_model, a_prompt: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Generate completion.</td>
+                </tr>
+                <tr>
+                    <td><code>chat</code></td>
+                    <td><code>(a_model: STRING; a_messages: ARRAY [TUPLE [role, content: STRING]]): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Chat conversation.</td>
+                </tr>
+                <tr>
+                    <td><code>list_models</code></td>
+                    <td><code>: SIMPLE_WEB_RESPONSE</code></td>
+                    <td>List available models.</td>
+                </tr>
+                <tr>
+                    <td><code>pull</code></td>
+                    <td><code>(a_model: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Pull/download model.</td>
+                </tr>
+                <tr>
+                    <td><code>embeddings</code></td>
+                    <td><code>(a_model, a_prompt: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Generate embeddings.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_CLAUDE_CLIENT</h3>
+            <p>Client for Anthropic Claude API.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code>(a_api_key: STRING)</code></td>
+                    <td>Create client with API key.</td>
+                </tr>
+                <tr>
+                    <td><code>message</code></td>
+                    <td><code>(a_model, a_prompt: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Send message.</td>
+                </tr>
+                <tr>
+                    <td><code>message_with_system</code></td>
+                    <td><code>(a_model, a_system, a_prompt: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Send message with system prompt.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_OPENAI_CLIENT</h3>
+            <p>Client for OpenAI API.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code>(a_api_key: STRING)</code></td>
+                    <td>Create client with API key.</td>
+                </tr>
+                <tr>
+                    <td><code>chat</code></td>
+                    <td><code>(a_model: STRING; a_messages: ARRAY [TUPLE [role, content: STRING]]): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Chat completion.</td>
+                </tr>
+                <tr>
+                    <td><code>completion</code></td>
+                    <td><code>(a_model, a_prompt: STRING): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Text completion.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_GROK_CLIENT</h3>
+            <p>Client for xAI Grok API.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code>(a_api_key: STRING)</code></td>
+                    <td>Create client with API key.</td>
+                </tr>
+                <tr>
+                    <td><code>chat</code></td>
+                    <td><code>(a_model: STRING; a_messages: ARRAY [TUPLE [role, content: STRING]]): SIMPLE_WEB_RESPONSE</code></td>
+                    <td>Chat completion.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="server-classes">
+            <h2>HTTP Server Classes</h2>
+
+            <h3>SIMPLE_WEB_SERVER</h3>
+            <p>HTTP server with clean routing API.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code>(a_port: INTEGER)</code></td>
+                    <td>Create server on port.</td>
+                </tr>
+                <tr>
+                    <td><code>on_get</code></td>
+                    <td><code>(a_pattern: STRING; a_handler: PROCEDURE [...])</code></td>
+                    <td>Register GET handler.</td>
+                </tr>
+                <tr>
+                    <td><code>on_post</code></td>
+                    <td><code>(a_pattern: STRING; a_handler: PROCEDURE [...])</code></td>
+                    <td>Register POST handler.</td>
+                </tr>
+                <tr>
+                    <td><code>on_put</code></td>
+                    <td><code>(a_pattern: STRING; a_handler: PROCEDURE [...])</code></td>
+                    <td>Register PUT handler.</td>
+                </tr>
+                <tr>
+                    <td><code>on_delete</code></td>
+                    <td><code>(a_pattern: STRING; a_handler: PROCEDURE [...])</code></td>
+                    <td>Register DELETE handler.</td>
+                </tr>
+                <tr>
+                    <td><code>on_patch</code></td>
+                    <td><code>(a_pattern: STRING; a_handler: PROCEDURE [...])</code></td>
+                    <td>Register PATCH handler.</td>
+                </tr>
+                <tr>
+                    <td><code>use</code></td>
+                    <td><code>(a_middleware: SIMPLE_WEB_MIDDLEWARE)</code></td>
+                    <td>Add middleware.</td>
+                </tr>
+                <tr>
+                    <td><code>start</code></td>
+                    <td><code></code></td>
+                    <td>Start server (blocking).</td>
+                </tr>
+                <tr>
+                    <td><code>port</code></td>
+                    <td><code>: INTEGER</code></td>
+                    <td>Server port.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_SERVER_REQUEST</h3>
+            <p>Server request wrapper.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>method</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>HTTP method (GET, POST, etc).</td>
+                </tr>
+                <tr>
+                    <td><code>path</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>Request path.</td>
+                </tr>
+                <tr>
+                    <td><code>body</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>Request body.</td>
+                </tr>
+                <tr>
+                    <td><code>path_parameter</code></td>
+                    <td><code>(a_name: STRING): detachable STRING</code></td>
+                    <td>Get path parameter ({id}).</td>
+                </tr>
+                <tr>
+                    <td><code>query_parameter</code></td>
+                    <td><code>(a_name: STRING): detachable STRING</code></td>
+                    <td>Get query parameter (?name=value).</td>
+                </tr>
+                <tr>
+                    <td><code>header</code></td>
+                    <td><code>(a_name: STRING): detachable STRING</code></td>
+                    <td>Get request header.</td>
+                </tr>
+                <tr>
+                    <td><code>has_header</code></td>
+                    <td><code>(a_name: STRING): BOOLEAN</code></td>
+                    <td>Check if header exists.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_SERVER_RESPONSE</h3>
+            <p>Server response builder.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>set_status</code></td>
+                    <td><code>(a_code: INTEGER)</code></td>
+                    <td>Set HTTP status code.</td>
+                </tr>
+                <tr>
+                    <td><code>set_header</code></td>
+                    <td><code>(a_name, a_value: STRING)</code></td>
+                    <td>Set response header.</td>
+                </tr>
+                <tr>
+                    <td><code>send_text</code></td>
+                    <td><code>(a_text: STRING)</code></td>
+                    <td>Send plain text response.</td>
+                </tr>
+                <tr>
+                    <td><code>send_json</code></td>
+                    <td><code>(a_json: STRING)</code></td>
+                    <td>Send JSON response.</td>
+                </tr>
+                <tr>
+                    <td><code>send_json_object</code></td>
+                    <td><code>(a_obj: SIMPLE_JSON_OBJECT)</code></td>
+                    <td>Send JSON object.</td>
+                </tr>
+                <tr>
+                    <td><code>send_html</code></td>
+                    <td><code>(a_html: STRING)</code></td>
+                    <td>Send HTML response.</td>
+                </tr>
+                <tr>
+                    <td><code>send_file</code></td>
+                    <td><code>(a_path: STRING)</code></td>
+                    <td>Send file contents.</td>
+                </tr>
+                <tr>
+                    <td><code>redirect</code></td>
+                    <td><code>(a_url: STRING)</code></td>
+                    <td>Redirect to URL (302).</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="middleware-classes">
+            <h2>Middleware Classes</h2>
+
+            <h3>SIMPLE_WEB_MIDDLEWARE (deferred)</h3>
+            <p>Base class for middleware.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>process</code></td>
+                    <td><code>(req: ...; res: ...): BOOLEAN</code></td>
+                    <td>Process request. Return True to continue.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_LOGGING_MIDDLEWARE</h3>
+            <p>Logs all requests.</p>
+
+            <h3>SIMPLE_WEB_CORS_MIDDLEWARE</h3>
+            <p>CORS header handling.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code></code></td>
+                    <td>Allow all origins (*).</td>
+                </tr>
+                <tr>
+                    <td><code>make_with_origins</code></td>
+                    <td><code>(a_origins: ARRAY [STRING])</code></td>
+                    <td>Allow specific origins.</td>
+                </tr>
+            </table>
+
+            <h3>SIMPLE_WEB_AUTH_MIDDLEWARE</h3>
+            <p>Authentication middleware.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make_bearer</code></td>
+                    <td><code>(a_secret: STRING)</code></td>
+                    <td>Bearer token auth.</td>
+                </tr>
+                <tr>
+                    <td><code>make_basic</code></td>
+                    <td><code>(a_user, a_pass: STRING)</code></td>
+                    <td>Basic auth.</td>
+                </tr>
+                <tr>
+                    <td><code>make_api_key</code></td>
+                    <td><code>(a_key: STRING)</code></td>
+                    <td>API key auth (X-API-Key header).</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="security-classes">
+            <h2>Security Classes</h2>
+
+            <h3>SIMPLE_WEB_INPUT_SANITIZER</h3>
+            <p>Input sanitization utilities.</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>escape_html</code></td>
+                    <td><code>(a_input: STRING): STRING</code></td>
+                    <td>Escape HTML special characters.</td>
+                </tr>
+                <tr>
+                    <td><code>is_safe_path</code></td>
+                    <td><code>(a_path: STRING): BOOLEAN</code></td>
+                    <td>Check for path traversal.</td>
+                </tr>
+                <tr>
+                    <td><code>sanitize_path</code></td>
+                    <td><code>(a_path: STRING): STRING</code></td>
+                    <td>Remove dangerous path elements.</td>
+                </tr>
+                <tr>
+                    <td><code>sanitize_header</code></td>
+                    <td><code>(a_value: STRING): STRING</code></td>
+                    <td>Remove header injection chars.</td>
+                </tr>
+                <tr>
+                    <td><code>escape_sql</code></td>
+                    <td><code>(a_value: STRING): STRING</code></td>
+                    <td>Basic SQL escaping (prefer parameterized queries).</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="constants">
+            <h2>Constants</h2>
+
+            <h3>HTTP Status Codes</h3>
+            <p>From <code>SIMPLE_WEB_CONSTANTS</code>:</p>
+            <table class="api-table">
+                <tr>
+                    <th>Constant</th>
+                    <th>Value</th>
+                </tr>
+                <tr><td><code>Http_ok</code></td><td>200</td></tr>
+                <tr><td><code>Http_created</code></td><td>201</td></tr>
+                <tr><td><code>Http_no_content</code></td><td>204</td></tr>
+                <tr><td><code>Http_bad_request</code></td><td>400</td></tr>
+                <tr><td><code>Http_unauthorized</code></td><td>401</td></tr>
+                <tr><td><code>Http_forbidden</code></td><td>403</td></tr>
+                <tr><td><code>Http_not_found</code></td><td>404</td></tr>
+                <tr><td><code>Http_internal_error</code></td><td>500</td></tr>
+            </table>
+
+            <h3>Content Types</h3>
+            <table class="api-table">
+                <tr>
+                    <th>Constant</th>
+                    <th>Value</th>
+                </tr>
+                <tr><td><code>Content_type_json</code></td><td>"application/json"</td></tr>
+                <tr><td><code>Content_type_html</code></td><td>"text/html"</td></tr>
+                <tr><td><code>Content_type_text</code></td><td>"text/plain"</td></tr>
+                <tr><td><code>Content_type_form</code></td><td>"application/x-www-form-urlencoded"</td></tr>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem of focused, single-purpose Eiffel libraries.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

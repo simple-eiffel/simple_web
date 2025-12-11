@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - simple_web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_web</h1>
+        <p class="tagline">User Guide</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="user-guide.html" class="active">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_web">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="getting-started">
+            <h2>Getting Started</h2>
+
+            <h3>Installation</h3>
+            <ol>
+                <li>Set environment variables:
+<pre><code>export SIMPLE_WEB=/path/to/simple_web
+export SIMPLE_JSON=/path/to/simple_json
+export SIMPLE_PROCESS=/path/to/simple_process</code></pre>
+                </li>
+                <li>Add to your ECF file:
+<pre><code>&lt;library name="simple_web" location="$SIMPLE_WEB/simple_web.ecf"/&gt;</code></pre>
+                </li>
+            </ol>
+
+            <h3>Dependencies</h3>
+            <ul>
+                <li>EiffelStudio 25.02+</li>
+                <li><code>curl_http_client</code> library (included with EiffelStudio)</li>
+                <li><code>curl.exe</code> on PATH (for hybrid client)</li>
+                <li>EWF libraries (wsf, httpd, default_standalone)</li>
+                <li><code>simple_json</code> library</li>
+                <li><code>simple_process</code> library</li>
+            </ul>
+        </section>
+
+        <section id="http-client">
+            <h2>HTTP Client</h2>
+
+            <h3>Basic Requests</h3>
+<pre><code><span class="keyword">local</span>
+    client: <span class="type">SIMPLE_WEB_CLIENT</span>
+    response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> client.make
+
+    <span class="comment">-- GET request</span>
+    response := client.get (<span class="string">"https://api.example.com/users"</span>)
+
+    <span class="comment">-- POST with body</span>
+    response := client.post (<span class="string">"https://api.example.com/users"</span>, <span class="string">"name=Alice"</span>)
+
+    <span class="comment">-- POST with JSON</span>
+    response := client.post_json (<span class="string">"https://api.example.com/users"</span>,
+        <span class="string">'{"name": "Alice", "email": "alice@example.com"}'</span>)
+
+    <span class="comment">-- PUT request</span>
+    response := client.put (<span class="string">"https://api.example.com/users/1"</span>, <span class="string">'{"name": "Bob"}'</span>)
+
+    <span class="comment">-- DELETE request</span>
+    response := client.delete (<span class="string">"https://api.example.com/users/1"</span>)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Handling Responses</h3>
+<pre><code><span class="keyword">local</span>
+    response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+<span class="keyword">do</span>
+    response := client.get (<span class="string">"https://api.example.com/users"</span>)
+
+    <span class="comment">-- Check status</span>
+    <span class="keyword">if</span> response.is_success <span class="keyword">then</span>
+        print (<span class="string">"Status: "</span> + response.status_code.out)
+        print (<span class="string">"Body: "</span> + response.body)
+    <span class="keyword">elseif</span> response.is_client_error <span class="keyword">then</span>
+        print (<span class="string">"Client error: "</span> + response.status_code.out)
+    <span class="keyword">elseif</span> response.is_server_error <span class="keyword">then</span>
+        print (<span class="string">"Server error: "</span> + response.status_code.out)
+    <span class="keyword">end</span>
+
+    <span class="comment">-- Access headers</span>
+    <span class="keyword">if</span> <span class="keyword">attached</span> response.header (<span class="string">"Content-Type"</span>) <span class="keyword">as</span> ct <span class="keyword">then</span>
+        print (<span class="string">"Content-Type: "</span> + ct)
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>Fluent Request Builder</h3>
+<pre><code><span class="keyword">local</span>
+    request: <span class="type">SIMPLE_WEB_REQUEST</span>
+    response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Build complex request</span>
+    <span class="keyword">create</span> request.make_post (<span class="string">"https://api.example.com/data"</span>)
+    request
+        .with_bearer_token (<span class="string">"your-jwt-token"</span>)
+        .with_json_body (<span class="string">'{"key": "value"}'</span>)
+        .with_header (<span class="string">"X-Custom-Header"</span>, <span class="string">"custom-value"</span>)
+        .with_timeout (30000)
+        .do_nothing
+
+    response := client.execute (request)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Hybrid Client (for Localhost)</h3>
+            <p>Use the hybrid client when making POST requests to localhost services. It works around a known issue in libcurl.</p>
+
+<pre><code><span class="keyword">local</span>
+    client: <span class="type">SIMPLE_WEB_HYBRID_CLIENT</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> client.make
+
+    <span class="comment">-- Uses curl.exe process for POST (reliable)</span>
+    response := client.post_json (<span class="string">"http://localhost:11434/api/generate"</span>,
+        <span class="string">'{"model": "llama3", "prompt": "Hello", "stream": false}'</span>)
+
+    <span class="comment">-- Uses libcurl for GET (fast)</span>
+    response := client.get (<span class="string">"http://localhost:11434/api/tags"</span>)
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="ai-clients">
+            <h2>AI Clients</h2>
+
+            <h3>Ollama Client</h3>
+<pre><code><span class="keyword">local</span>
+    ollama: <span class="type">SIMPLE_WEB_OLLAMA_CLIENT</span>
+    response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> ollama
+
+    <span class="comment">-- Generate completion</span>
+    response := ollama.generate (<span class="string">"llama3"</span>, <span class="string">"Why is the sky blue?"</span>)
+    print (response.body)
+
+    <span class="comment">-- Chat conversation</span>
+    response := ollama.chat (<span class="string">"llama3"</span>,
+        &lt;&lt;[<span class="string">"user"</span>, <span class="string">"Hello"</span>],
+          [<span class="string">"assistant"</span>, <span class="string">"Hi! How can I help?"</span>],
+          [<span class="string">"user"</span>, <span class="string">"What's the weather?"</span>]&gt;&gt;)
+
+    <span class="comment">-- List available models</span>
+    response := ollama.list_models
+
+    <span class="comment">-- Pull a model</span>
+    response := ollama.pull (<span class="string">"mistral"</span>)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Claude Client</h3>
+<pre><code><span class="keyword">local</span>
+    claude: <span class="type">SIMPLE_WEB_CLAUDE_CLIENT</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> claude.make (<span class="string">"your-anthropic-api-key"</span>)
+
+    response := claude.message (<span class="string">"claude-3-sonnet-20240229"</span>,
+        <span class="string">"Explain quantum computing in simple terms"</span>)
+
+    print (response.body)
+<span class="keyword">end</span></code></pre>
+
+            <h3>OpenAI Client</h3>
+<pre><code><span class="keyword">local</span>
+    openai: <span class="type">SIMPLE_WEB_OPENAI_CLIENT</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> openai.make (<span class="string">"your-openai-api-key"</span>)
+
+    response := openai.chat (<span class="string">"gpt-4"</span>,
+        &lt;&lt;[<span class="string">"user"</span>, <span class="string">"Hello, GPT!"</span>]&gt;&gt;)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Grok Client</h3>
+<pre><code><span class="keyword">local</span>
+    grok: <span class="type">SIMPLE_WEB_GROK_CLIENT</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> grok.make (<span class="string">"your-xai-api-key"</span>)
+
+    response := grok.chat (<span class="string">"grok-1"</span>,
+        &lt;&lt;[<span class="string">"user"</span>, <span class="string">"What's trending today?"</span>]&gt;&gt;)
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="http-server">
+            <h2>HTTP Server</h2>
+
+            <h3>Basic Server Setup</h3>
+<pre><code><span class="keyword">class</span>
+    <span class="type">MY_API</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make
+        <span class="keyword">local</span>
+            server: <span class="type">SIMPLE_WEB_SERVER</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> server.make (8080)
+
+            <span class="comment">-- Register routes</span>
+            server.on_get (<span class="string">"/"</span>, <span class="keyword">agent</span> handle_root)
+            server.on_get (<span class="string">"/api/users"</span>, <span class="keyword">agent</span> handle_users)
+            server.on_get (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> handle_user)
+            server.on_post (<span class="string">"/api/users"</span>, <span class="keyword">agent</span> create_user)
+            server.on_put (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> update_user)
+            server.on_delete (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> delete_user)
+
+            <span class="comment">-- Start (blocking)</span>
+            server.start
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Handlers</span>
+
+    handle_root (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            res.send_text (<span class="string">"Welcome to My API"</span>)
+        <span class="keyword">end</span>
+
+    handle_users (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            res.send_json (<span class="string">'[{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]'</span>)
+        <span class="keyword">end</span>
+
+    handle_user (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="comment">-- Access path parameter</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.path_parameter (<span class="string">"id"</span>) <span class="keyword">as</span> id <span class="keyword">then</span>
+                res.send_json (<span class="string">'{"id": '</span> + id + <span class="string">', "name": "Alice"}'</span>)
+            <span class="keyword">else</span>
+                res.set_status (404)
+                res.send_json (<span class="string">'{"error": "User not found"}'</span>)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    create_user (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="comment">-- Access request body</span>
+            print (<span class="string">"Body: "</span> + req.body)
+            res.set_status (201)
+            res.send_json (<span class="string">'{"id": 3, "created": true}'</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+
+            <h3>Request Object</h3>
+<pre><code><span class="comment">-- Path parameters: /users/{id} -> req.path_parameter ("id")</span>
+<span class="keyword">if</span> <span class="keyword">attached</span> req.path_parameter (<span class="string">"id"</span>) <span class="keyword">as</span> id <span class="keyword">then</span>
+    <span class="comment">-- Use id</span>
+<span class="keyword">end</span>
+
+<span class="comment">-- Query parameters: /search?q=test -> req.query_parameter ("q")</span>
+<span class="keyword">if</span> <span class="keyword">attached</span> req.query_parameter (<span class="string">"q"</span>) <span class="keyword">as</span> query <span class="keyword">then</span>
+    <span class="comment">-- Use query</span>
+<span class="keyword">end</span>
+
+<span class="comment">-- Request body</span>
+body := req.body
+
+<span class="comment">-- Headers</span>
+<span class="keyword">if</span> <span class="keyword">attached</span> req.header (<span class="string">"Authorization"</span>) <span class="keyword">as</span> auth <span class="keyword">then</span>
+    <span class="comment">-- Use auth</span>
+<span class="keyword">end</span>
+
+<span class="comment">-- HTTP method</span>
+method := req.method  <span class="comment">-- "GET", "POST", etc.</span></code></pre>
+
+            <h3>Response Object</h3>
+<pre><code><span class="comment">-- Set status code</span>
+res.set_status (200)
+res.set_status (201)  <span class="comment">-- Created</span>
+res.set_status (404)  <span class="comment">-- Not Found</span>
+
+<span class="comment">-- Send responses</span>
+res.send_text (<span class="string">"Plain text response"</span>)
+res.send_json (<span class="string">'{"key": "value"}'</span>)
+res.send_json_object (my_json_object)
+res.send_html (<span class="string">"&lt;h1&gt;Hello&lt;/h1&gt;"</span>)
+
+<span class="comment">-- Set headers</span>
+res.set_header (<span class="string">"X-Custom"</span>, <span class="string">"value"</span>)
+
+<span class="comment">-- Redirect</span>
+res.redirect (<span class="string">"/new-location"</span>)</code></pre>
+        </section>
+
+        <section id="middleware">
+            <h2>Middleware</h2>
+
+            <h3>Using Middleware</h3>
+<pre><code><span class="keyword">local</span>
+    server: <span class="type">SIMPLE_WEB_SERVER</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> server.make (8080)
+
+    <span class="comment">-- Add middleware (order matters)</span>
+    server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_LOGGING_MIDDLEWARE</span>}.make)
+    server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_CORS_MIDDLEWARE</span>}.make)
+    server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_AUTH_MIDDLEWARE</span>}.make_bearer (<span class="string">"secret"</span>))
+
+    <span class="comment">-- Register routes</span>
+    server.on_get (<span class="string">"/api/data"</span>, <span class="keyword">agent</span> handle_data)
+
+    server.start
+<span class="keyword">end</span></code></pre>
+
+            <h3>CORS Middleware</h3>
+<pre><code><span class="comment">-- Allow all origins</span>
+server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_CORS_MIDDLEWARE</span>}.make)
+
+<span class="comment">-- Allow specific origins</span>
+server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_CORS_MIDDLEWARE</span>}.make_with_origins (
+    &lt;&lt;<span class="string">"http://localhost:3000"</span>, <span class="string">"https://myapp.com"</span>&gt;&gt;))</code></pre>
+
+            <h3>Authentication Middleware</h3>
+<pre><code><span class="comment">-- Bearer token auth</span>
+server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_AUTH_MIDDLEWARE</span>}.make_bearer (<span class="string">"your-secret"</span>))
+
+<span class="comment">-- API key auth (header: X-API-Key)</span>
+server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_AUTH_MIDDLEWARE</span>}.make_api_key (<span class="string">"your-api-key"</span>))
+
+<span class="comment">-- Basic auth</span>
+server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_AUTH_MIDDLEWARE</span>}.make_basic (<span class="string">"user"</span>, <span class="string">"pass"</span>))</code></pre>
+
+            <h3>Custom Middleware</h3>
+<pre><code><span class="keyword">class</span>
+    <span class="type">MY_MIDDLEWARE</span>
+
+<span class="keyword">inherit</span>
+    <span class="type">SIMPLE_WEB_MIDDLEWARE</span>
+
+<span class="keyword">feature</span>
+
+    process (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>): BOOLEAN
+            <span class="comment">-- Return True to continue, False to stop</span>
+        <span class="keyword">do</span>
+            <span class="comment">-- Pre-processing</span>
+            print (<span class="string">"Request: "</span> + req.method + <span class="string">" "</span> + req.path)
+
+            <span class="comment">-- Continue to next middleware/handler</span>
+            Result := True
+
+            <span class="comment">-- Or stop the chain:</span>
+            <span class="comment">-- res.set_status (403)</span>
+            <span class="comment">-- res.send_json ('{"error": "Forbidden"}')</span>
+            <span class="comment">-- Result := False</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="security">
+            <h2>Security</h2>
+
+            <h3>Input Sanitization</h3>
+<pre><code><span class="keyword">local</span>
+    sanitizer: <span class="type">SIMPLE_WEB_INPUT_SANITIZER</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> sanitizer
+
+    <span class="comment">-- XSS prevention</span>
+    safe_html := sanitizer.escape_html (user_input)
+
+    <span class="comment">-- Path traversal prevention</span>
+    <span class="keyword">if</span> sanitizer.is_safe_path (file_path) <span class="keyword">then</span>
+        <span class="comment">-- Safe to use</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">-- Header injection prevention</span>
+    safe_header := sanitizer.sanitize_header (header_value)
+
+    <span class="comment">-- SQL injection prevention (basic)</span>
+    safe_value := sanitizer.escape_sql (user_value)
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="json-handling">
+            <h2>JSON Handling</h2>
+
+<pre><code><span class="keyword">local</span>
+    json: <span class="type">SIMPLE_JSON</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> json
+
+    <span class="comment">-- Parse request body as JSON</span>
+    <span class="keyword">if</span> <span class="keyword">attached</span> json.parse (req.body) <span class="keyword">as</span> v <span class="keyword">then</span>
+        <span class="keyword">if</span> v.is_object <span class="keyword">then</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> v.as_object.string_item (<span class="string">"name"</span>) <span class="keyword">as</span> name <span class="keyword">then</span>
+                <span class="comment">-- Use name</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">-- Build JSON response</span>
+    response_obj := json.new_object
+        .put_string (<span class="string">"status"</span>, <span class="string">"success"</span>)
+        .put_integer (<span class="string">"id"</span>, new_id)
+
+    res.send_json_object (response_obj)
+<span class="keyword">end</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem of focused, single-purpose Eiffel libraries.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

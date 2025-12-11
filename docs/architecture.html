@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - simple_web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_web</h1>
+        <p class="tagline">Architecture Guide</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html" class="active">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_web">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Architectural Overview</h2>
+
+            <p><strong>simple_web</strong> provides a high-level HTTP library with both client and server capabilities, built on top of EiffelStudio's proven HTTP infrastructure.</p>
+
+            <div class="highlight-box">
+                <h3>Design Philosophy</h3>
+                <ul>
+                    <li><strong>Facade Pattern</strong>: Simple APIs hiding complex internals</li>
+                    <li><strong>Builder Pattern</strong>: Fluent request construction</li>
+                    <li><strong>Strategy Pattern</strong>: Multiple client implementations</li>
+                    <li><strong>Chain of Responsibility</strong>: Middleware pipeline</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="module-structure">
+            <h2>Module Structure</h2>
+
+<pre><code>simple_web/
+├── src/
+│   ├── client/           <span class="comment"># HTTP client classes</span>
+│   │   ├── simple_web_client.e
+│   │   ├── simple_web_hybrid_client.e
+│   │   ├── simple_web_request.e
+│   │   └── simple_web_response.e
+│   │
+│   ├── server/           <span class="comment"># HTTP server classes</span>
+│   │   ├── simple_web_server.e
+│   │   ├── simple_web_server_request.e
+│   │   ├── simple_web_server_response.e
+│   │   └── simple_web_server_execution.e
+│   │
+│   ├── ai/               <span class="comment"># AI service clients</span>
+│   │   ├── simple_web_ollama_client.e
+│   │   ├── simple_web_claude_client.e
+│   │   ├── simple_web_openai_client.e
+│   │   └── simple_web_grok_client.e
+│   │
+│   ├── auth/             <span class="comment"># Authentication middleware</span>
+│   │   ├── simple_web_auth_middleware.e
+│   │   └── simple_web_cors_middleware.e
+│   │
+│   ├── core/             <span class="comment"># Middleware base</span>
+│   │   ├── simple_web_middleware.e
+│   │   └── simple_web_logging_middleware.e
+│   │
+│   └── constants/        <span class="comment"># Shared constants</span>
+│       └── simple_web_constants.e
+│
+├── examples/             <span class="comment"># Example applications</span>
+│   ├── todo_api/
+│   └── wms_api/
+│
+└── testing/              <span class="comment"># Test suite</span></code></pre>
+        </section>
+
+        <section id="client-architecture">
+            <h2>HTTP Client Architecture</h2>
+
+<pre><code>                    +-------------------+
+                    | SIMPLE_WEB_CLIENT |  (Primary Client)
+                    +-------------------+
+                            |
+                            | uses
+                            v
+                    +-------------------+
+                    | curl_http_client  |  (EiffelStudio Library)
+                    +-------------------+
+
+                    +------------------------+
+                    | SIMPLE_WEB_HYBRID_CLIENT|  (Localhost Workaround)
+                    +------------------------+
+                            |
+            +---------------+---------------+
+            |                               |
+    +---------------+               +---------------+
+    |   libcurl     |               | curl.exe      |
+    |   (GET)       |               | (POST)        |
+    +---------------+               +---------------+</code></pre>
+
+            <h3>Why Two Clients?</h3>
+            <p>The standard <code>curl_http_client</code> library has a known issue with POST request bodies to localhost. The hybrid client works around this by:</p>
+            <ul>
+                <li>Using libcurl directly for GET requests (fast)</li>
+                <li>Using curl.exe process for POST requests to localhost (reliable)</li>
+                <li>Automatically detecting localhost and choosing the right strategy</li>
+            </ul>
+
+            <h3>Request Builder Pattern</h3>
+<pre><code><span class="keyword">class</span>
+    <span class="type">SIMPLE_WEB_REQUEST</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Builder</span>
+
+    with_header (a_name, a_value: STRING): <span class="keyword">like</span> Current
+        <span class="keyword">do</span>
+            headers.put (a_value, a_name)
+            Result := Current
+        <span class="keyword">ensure</span>
+            chained: Result = Current
+            header_added: headers.has (a_name)
+        <span class="keyword">end</span>
+
+    with_bearer_token (a_token: STRING): <span class="keyword">like</span> Current
+        <span class="keyword">do</span>
+            Result := with_header (<span class="string">"Authorization"</span>, <span class="string">"Bearer "</span> + a_token)
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="server-architecture">
+            <h2>HTTP Server Architecture</h2>
+
+<pre><code>+-------------------+
+| SIMPLE_WEB_SERVER |
++-------------------+
+        |
+        | inherits
+        v
++-------------------+
+| WSF_DEFAULT_SERVICE |  (EWF Framework)
++-------------------+
+        |
+        | creates
+        v
++-----------------------------+
+| SIMPLE_WEB_SERVER_EXECUTION |
++-----------------------------+
+        |
+        | processes
+        v
++-------------------+     +--------------------+
+|  Route Matching   | --> | Handler Invocation |
++-------------------+     +--------------------+
+        |
+        | wraps
+        v
++------------------------+     +-------------------------+
+| SIMPLE_WEB_SERVER_     |     | SIMPLE_WEB_SERVER_      |
+|      REQUEST           |     |      RESPONSE           |
++------------------------+     +-------------------------+
+        |                               |
+        | wraps                         | wraps
+        v                               v
++------------------------+     +-------------------------+
+|   WSF_REQUEST          |     |   WSF_RESPONSE          |
++------------------------+     +-------------------------+</code></pre>
+
+            <h3>Route Registration</h3>
+<pre><code><span class="keyword">feature</span> <span class="comment">-- Route Registration</span>
+
+    on_get (a_pattern: STRING; a_handler: PROCEDURE [...])
+        <span class="keyword">do</span>
+            add_route (<span class="string">"GET"</span>, a_pattern, a_handler)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE} <span class="comment">-- Implementation</span>
+
+    routes: HASH_TABLE [TUPLE [method: STRING; handler: PROCEDURE [...]]; STRING]
+        <span class="comment">-- Pattern -> (method, handler) mapping</span>
+
+    add_route (a_method, a_pattern: STRING; a_handler: PROCEDURE [...])
+        <span class="keyword">do</span>
+            routes.put ([a_method, a_handler], a_pattern)
+        <span class="keyword">end</span></code></pre>
+
+            <h3>Path Parameter Extraction</h3>
+<pre><code><span class="comment">-- Pattern: /api/users/{id}/posts/{post_id}</span>
+<span class="comment">-- Request: /api/users/42/posts/7</span>
+<span class="comment">-- Extracted: {id -> "42", post_id -> "7"}</span>
+
+extract_path_params (a_pattern, a_path: STRING): HASH_TABLE [STRING, STRING]
+    <span class="keyword">do</span>
+        <span class="comment">-- Split both into segments</span>
+        <span class="comment">-- Match {name} patterns to actual values</span>
+        <span class="comment">-- Build parameter table</span>
+    <span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="middleware-architecture">
+            <h2>Middleware Architecture</h2>
+
+            <p>Middleware follows the Chain of Responsibility pattern:</p>
+
+<pre><code>Request
+    |
+    v
++-------------------+
+| Logging Middleware | --> Log request
++-------------------+
+    | continue
+    v
++-------------------+
+| CORS Middleware   | --> Add CORS headers
++-------------------+
+    | continue
+    v
++-------------------+
+| Auth Middleware   | --> Check authorization
++-------------------+
+    | continue (or stop with 401)
+    v
++-------------------+
+| Route Handler     | --> Business logic
++-------------------+
+    |
+    v
+Response</code></pre>
+
+            <h3>Middleware Interface</h3>
+<pre><code><span class="keyword">deferred class</span>
+    <span class="type">SIMPLE_WEB_MIDDLEWARE</span>
+
+<span class="keyword">feature</span>
+
+    process (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>): BOOLEAN
+            <span class="comment">-- Process request. Return True to continue chain, False to stop.</span>
+        <span class="keyword">deferred</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+
+            <h3>Middleware Execution</h3>
+<pre><code>execute_middleware (req, res: ...)
+    <span class="keyword">do</span>
+        <span class="keyword">across</span> middleware_chain <span class="keyword">as</span> mw <span class="keyword">loop</span>
+            <span class="keyword">if</span> not mw.process (req, res) <span class="keyword">then</span>
+                <span class="comment">-- Middleware stopped the chain</span>
+                <span class="keyword">return</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+        <span class="comment">-- All middleware passed, invoke route handler</span>
+        invoke_handler (req, res)
+    <span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="ai-client-architecture">
+            <h2>AI Client Architecture</h2>
+
+            <p>AI clients share a common pattern built on the HTTP client:</p>
+
+<pre><code>+-------------------+
+| SIMPLE_WEB_CLIENT |
++-------------------+
+        ^
+        | uses
+        |
++-------------------+     +-------------------+
+| OLLAMA_CLIENT     |     | CLAUDE_CLIENT     |
++-------------------+     +-------------------+
+        |                         |
+        | API-specific            | API-specific
+        | request building        | request building
+        v                         v
+    localhost:11434         api.anthropic.com</code></pre>
+
+            <h3>API Abstraction</h3>
+<pre><code><span class="keyword">class</span>
+    <span class="type">SIMPLE_WEB_OLLAMA_CLIENT</span>
+
+<span class="keyword">feature</span>
+
+    generate (a_model, a_prompt: STRING): SIMPLE_WEB_RESPONSE
+        <span class="keyword">local</span>
+            json: <span class="type">SIMPLE_JSON</span>
+            body: <span class="type">SIMPLE_JSON_OBJECT</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> json
+            body := json.new_object
+                .put_string (<span class="string">"model"</span>, a_model)
+                .put_string (<span class="string">"prompt"</span>, a_prompt)
+                .put_boolean (<span class="string">"stream"</span>, False)
+
+            Result := client.post_json (
+                base_url + <span class="string">"/api/generate"</span>,
+                body.to_json)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    client: <span class="type">SIMPLE_WEB_HYBRID_CLIENT</span>
+        <span class="comment">-- Use hybrid for localhost reliability</span>
+
+    base_url: STRING = <span class="string">"http://localhost:11434"</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="security-architecture">
+            <h2>Security Architecture</h2>
+
+            <h3>Input Sanitization</h3>
+<pre><code><span class="keyword">class</span>
+    <span class="type">SIMPLE_WEB_INPUT_SANITIZER</span>
+
+<span class="keyword">feature</span> <span class="comment">-- XSS Prevention</span>
+
+    escape_html (a_input: STRING): STRING
+        <span class="keyword">do</span>
+            Result := a_input.twin
+            Result.replace_substring_all (<span class="string">"&"</span>, <span class="string">"&amp;amp;"</span>)
+            Result.replace_substring_all (<span class="string">"<"</span>, <span class="string">"&amp;lt;"</span>)
+            Result.replace_substring_all (<span class="string">">"</span>, <span class="string">"&amp;gt;"</span>)
+            Result.replace_substring_all (<span class="string">"%""</span>, <span class="string">"&amp;quot;"</span>)
+            Result.replace_substring_all (<span class="string">"'"</span>, <span class="string">"&amp;#x27;"</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Path Traversal Prevention</span>
+
+    is_safe_path (a_path: STRING): BOOLEAN
+        <span class="keyword">do</span>
+            Result := not a_path.has_substring (<span class="string">".."</span>)
+                  <span class="keyword">and</span> not a_path.has_substring (<span class="string">"~"</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Header Injection Prevention</span>
+
+    sanitize_header (a_value: STRING): STRING
+        <span class="keyword">do</span>
+            Result := a_value.twin
+            <span class="comment">-- Remove newlines that could inject headers</span>
+            Result.replace_substring_all (<span class="string">"%N"</span>, <span class="string">""</span>)
+            Result.replace_substring_all (<span class="string">"%R"</span>, <span class="string">""</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+
+            <h3>Authentication Flow</h3>
+<pre><code>Request with Authorization header
+    |
+    v
++-------------------+
+| Auth Middleware   |
++-------------------+
+    |
+    +-- No header --> 401 Unauthorized
+    |
+    +-- Invalid --> 401 Unauthorized
+    |
+    +-- Valid --> Continue to handler</code></pre>
+        </section>
+
+        <section id="ewf-integration">
+            <h2>EWF Integration</h2>
+
+            <p><strong>simple_web</strong> builds on the Eiffel Web Framework (EWF):</p>
+
+            <table>
+                <tr>
+                    <th>EWF Component</th>
+                    <th>simple_web Wrapper</th>
+                </tr>
+                <tr>
+                    <td>WSF_REQUEST</td>
+                    <td>SIMPLE_WEB_SERVER_REQUEST</td>
+                </tr>
+                <tr>
+                    <td>WSF_RESPONSE</td>
+                    <td>SIMPLE_WEB_SERVER_RESPONSE</td>
+                </tr>
+                <tr>
+                    <td>WSF_DEFAULT_SERVICE</td>
+                    <td>SIMPLE_WEB_SERVER</td>
+                </tr>
+                <tr>
+                    <td>WSF_EXECUTION</td>
+                    <td>SIMPLE_WEB_SERVER_EXECUTION</td>
+                </tr>
+            </table>
+
+            <h3>Why Wrap EWF?</h3>
+            <ul>
+                <li><strong>Simpler API</strong>: Agent-based routing instead of router objects</li>
+                <li><strong>Path Parameters</strong>: Built-in {id} extraction</li>
+                <li><strong>Middleware</strong>: Clean middleware pipeline</li>
+                <li><strong>JSON Integration</strong>: Direct JSON object support</li>
+            </ul>
+        </section>
+
+        <section id="design-by-contract">
+            <h2>Design by Contract</h2>
+
+<pre><code><span class="keyword">feature</span> <span class="comment">-- Route Registration</span>
+
+    on_get (a_pattern: STRING; a_handler: PROCEDURE [...])
+        <span class="keyword">require</span>
+            pattern_attached: a_pattern /= Void
+            handler_attached: a_handler /= Void
+        <span class="keyword">do</span>
+            add_route (<span class="string">"GET"</span>, a_pattern, a_handler)
+        <span class="keyword">ensure</span>
+            route_registered: has_route (<span class="string">"GET"</span>, a_pattern)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Response</span>
+
+    set_status (a_code: INTEGER)
+        <span class="keyword">require</span>
+            valid_status: a_code >= 100 <span class="keyword">and</span> a_code < 600
+        <span class="keyword">ensure</span>
+            status_set: status_code = a_code
+        <span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="scoop-compatibility">
+            <h2>SCOOP Compatibility</h2>
+
+            <p>The library is designed for SCOOP concurrency:</p>
+
+            <ul>
+                <li><strong>Stateless clients</strong>: Each request is independent</li>
+                <li><strong>No shared mutable state</strong>: Thread-safe by design</li>
+                <li><strong>ECF configured</strong>: <code>concurrency="scoop"</code></li>
+            </ul>
+
+<pre><code><span class="comment">-- Safe to use clients from separate objects</span>
+<span class="keyword">separate</span>
+    api_client: <span class="type">SIMPLE_WEB_CLIENT</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Each call is isolated</span>
+    response := api_client.get (url)
+<span class="keyword">end</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem of focused, single-purpose Eiffel libraries.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

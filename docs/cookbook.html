@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookbook - simple_web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_web</h1>
+        <p class="tagline">Cookbook</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html" class="active">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_json">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="intro">
+            <h2>Cookbook Recipes</h2>
+            <p>Real-world examples and patterns for HTTP client and server development.</p>
+        </section>
+
+        <section id="rest-api" class="recipe">
+            <h2>Recipe 1: Complete REST API</h2>
+            <p>Build a full CRUD REST API with JSON responses.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">USER_API</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> json
+            <span class="keyword">create</span> users.make (10)
+
+            <span class="keyword">create</span> server.make (8080)
+
+            <span class="comment">-- Middleware</span>
+            server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_LOGGING_MIDDLEWARE</span>}.make)
+            server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_CORS_MIDDLEWARE</span>}.make)
+
+            <span class="comment">-- Routes</span>
+            server.on_get (<span class="string">"/api/users"</span>, <span class="keyword">agent</span> list_users)
+            server.on_get (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> get_user)
+            server.on_post (<span class="string">"/api/users"</span>, <span class="keyword">agent</span> create_user)
+            server.on_put (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> update_user)
+            server.on_delete (<span class="string">"/api/users/{id}"</span>, <span class="keyword">agent</span> delete_user)
+
+            print (<span class="string">"Server starting on port 8080...%N"</span>)
+            server.start
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Handlers</span>
+
+    list_users (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">local</span>
+            arr: <span class="type">SIMPLE_JSON_ARRAY</span>
+        <span class="keyword">do</span>
+            arr := json.new_array
+            <span class="keyword">across</span> users <span class="keyword">as</span> u <span class="keyword">loop</span>
+                arr.add_object (user_to_json (u))
+            <span class="keyword">end</span>
+            res.send_json (arr.to_json)
+        <span class="keyword">end</span>
+
+    get_user (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.path_parameter (<span class="string">"id"</span>) <span class="keyword">as</span> id_str <span class="keyword">then</span>
+                <span class="keyword">if</span> id_str.is_integer <span class="keyword">and then</span> users.has (id_str.to_integer) <span class="keyword">then</span>
+                    res.send_json_object (user_to_json (users.item (id_str.to_integer)))
+                <span class="keyword">else</span>
+                    res.set_status (404)
+                    res.send_json (<span class="string">'{"error": "User not found"}'</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    create_user (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">local</span>
+            new_id: INTEGER
+            name, email: STRING
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> json.parse (req.body) <span class="keyword">as</span> v <span class="keyword">and then</span> v.is_object <span class="keyword">then</span>
+                <span class="keyword">if</span> <span class="keyword">attached</span> v.as_object.string_item (<span class="string">"name"</span>) <span class="keyword">as</span> n <span class="keyword">then</span>
+                    name := n
+                    email := <span class="string">""</span>
+                    <span class="keyword">if</span> <span class="keyword">attached</span> v.as_object.string_item (<span class="string">"email"</span>) <span class="keyword">as</span> e <span class="keyword">then</span>
+                        email := e
+                    <span class="keyword">end</span>
+
+                    new_id := users.count + 1
+                    users.put ([new_id, name, email], new_id)
+
+                    res.set_status (201)
+                    res.send_json_object (json.new_object
+                        .put_integer (<span class="string">"id"</span>, new_id)
+                        .put_string (<span class="string">"name"</span>, name)
+                        .put_string (<span class="string">"email"</span>, email))
+                <span class="keyword">else</span>
+                    res.set_status (400)
+                    res.send_json (<span class="string">'{"error": "Name required"}'</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">else</span>
+                res.set_status (400)
+                res.send_json (<span class="string">'{"error": "Invalid JSON"}'</span>)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    update_user (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="comment">-- Similar to create_user with id lookup</span>
+        <span class="keyword">end</span>
+
+    delete_user (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.path_parameter (<span class="string">"id"</span>) <span class="keyword">as</span> id_str <span class="keyword">then</span>
+                <span class="keyword">if</span> id_str.is_integer <span class="keyword">and then</span> users.has (id_str.to_integer) <span class="keyword">then</span>
+                    users.remove (id_str.to_integer)
+                    res.set_status (204)  <span class="comment">-- No Content</span>
+                <span class="keyword">else</span>
+                    res.set_status (404)
+                    res.send_json (<span class="string">'{"error": "User not found"}'</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE} <span class="comment">-- Implementation</span>
+
+    server: <span class="type">SIMPLE_WEB_SERVER</span>
+    json: <span class="type">SIMPLE_JSON</span>
+    users: HASH_TABLE [TUPLE [id: INTEGER; name, email: STRING], INTEGER]
+
+    user_to_json (u: TUPLE [id: INTEGER; name, email: STRING]): <span class="type">SIMPLE_JSON_OBJECT</span>
+        <span class="keyword">do</span>
+            Result := json.new_object
+                .put_integer (<span class="string">"id"</span>, u.id)
+                .put_string (<span class="string">"name"</span>, u.name)
+                .put_string (<span class="string">"email"</span>, u.email)
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="ollama-chatbot" class="recipe">
+            <h2>Recipe 2: Local AI Chatbot</h2>
+            <p>Build a command-line chatbot using Ollama.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">CHATBOT</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make
+        <span class="keyword">local</span>
+            input: STRING
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> ollama
+            <span class="keyword">create</span> json
+            <span class="keyword">create</span> history.make (10)
+
+            print (<span class="string">"Chatbot ready! (type 'quit' to exit)%N"</span>)
+            print (<span class="string">"Using model: "</span> + model + <span class="string">"%N%N"</span>)
+
+            <span class="keyword">from</span>
+            <span class="keyword">until</span>
+                False
+            <span class="keyword">loop</span>
+                io.put_string (<span class="string">"You: "</span>)
+                io.read_line
+                input := io.last_string.twin
+
+                <span class="keyword">if</span> input.same_string (<span class="string">"quit"</span>) <span class="keyword">then</span>
+                    print (<span class="string">"%NGoodbye!%N"</span>)
+                    <span class="keyword">break</span>
+                <span class="keyword">end</span>
+
+                <span class="comment">-- Add user message to history</span>
+                history.force ([<span class="string">"user"</span>, input])
+
+                <span class="comment">-- Get AI response</span>
+                <span class="keyword">if</span> <span class="keyword">attached</span> get_response <span class="keyword">as</span> response <span class="keyword">then</span>
+                    print (<span class="string">"Bot: "</span> + response + <span class="string">"%N%N"</span>)
+                    history.force ([<span class="string">"assistant"</span>, response])
+                <span class="keyword">else</span>
+                    print (<span class="string">"[Error getting response]%N%N"</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    ollama: <span class="type">SIMPLE_WEB_OLLAMA_CLIENT</span>
+    json: <span class="type">SIMPLE_JSON</span>
+    history: ARRAYED_LIST [TUPLE [role, content: STRING]]
+    model: STRING = <span class="string">"llama3"</span>
+
+    get_response: <span class="keyword">detachable</span> STRING
+        <span class="keyword">local</span>
+            messages: ARRAY [TUPLE [role, content: STRING]]
+            response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+            i: INTEGER
+        <span class="keyword">do</span>
+            <span class="comment">-- Convert history to array</span>
+            <span class="keyword">create</span> messages.make_filled ([<span class="string">""</span>, <span class="string">""</span>], 1, history.count)
+            <span class="keyword">from</span> i := 1 <span class="keyword">until</span> i > history.count <span class="keyword">loop</span>
+                messages[i] := history[i]
+                i := i + 1
+            <span class="keyword">end</span>
+
+            response := ollama.chat (model, messages)
+
+            <span class="keyword">if</span> response.is_success <span class="keyword">then</span>
+                <span class="comment">-- Extract response from JSON</span>
+                <span class="keyword">if</span> <span class="keyword">attached</span> json.parse (response.body) <span class="keyword">as</span> v <span class="keyword">then</span>
+                    Result := json.query_string (v, <span class="string">"$.message.content"</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="api-client" class="recipe">
+            <h2>Recipe 3: External API Client</h2>
+            <p>Create a typed client for an external API.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">WEATHER_CLIENT</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make (a_api_key: STRING)
+        <span class="keyword">do</span>
+            api_key := a_api_key
+            <span class="keyword">create</span> client.make
+            <span class="keyword">create</span> json
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Weather Operations</span>
+
+    current_weather (a_city: STRING): <span class="keyword">detachable</span> WEATHER_DATA
+            <span class="comment">-- Get current weather for city</span>
+        <span class="keyword">local</span>
+            url: STRING
+            response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+        <span class="keyword">do</span>
+            url := base_url + <span class="string">"/current.json?key="</span> + api_key + <span class="string">"&q="</span> + a_city
+            response := client.get (url)
+
+            <span class="keyword">if</span> response.is_success <span class="keyword">then</span>
+                Result := parse_weather (response.body)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    forecast (a_city: STRING; a_days: INTEGER): ARRAYED_LIST [WEATHER_DATA]
+            <span class="comment">-- Get forecast for city</span>
+        <span class="keyword">local</span>
+            url: STRING
+            response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> Result.make (a_days)
+            url := base_url + <span class="string">"/forecast.json?key="</span> + api_key
+                  + <span class="string">"&q="</span> + a_city + <span class="string">"&days="</span> + a_days.out
+
+            response := client.get (url)
+
+            <span class="keyword">if</span> response.is_success <span class="keyword">then</span>
+                Result := parse_forecast (response.body)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE} <span class="comment">-- Implementation</span>
+
+    client: <span class="type">SIMPLE_WEB_CLIENT</span>
+    json: <span class="type">SIMPLE_JSON</span>
+    api_key: STRING
+    base_url: STRING = <span class="string">"https://api.weatherapi.com/v1"</span>
+
+    parse_weather (a_json: STRING): <span class="keyword">detachable</span> WEATHER_DATA
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> json.parse (a_json) <span class="keyword">as</span> v <span class="keyword">then</span>
+                <span class="keyword">create</span> Result.make
+                Result.set_location (json.query_string (v, <span class="string">"$.location.name"</span>))
+                Result.set_temp_c (json.query_integer (v, <span class="string">"$.current.temp_c"</span>).to_real)
+                Result.set_condition (json.query_string (v, <span class="string">"$.current.condition.text"</span>))
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="auth-api" class="recipe">
+            <h2>Recipe 4: API with JWT Authentication</h2>
+            <p>Secure API with JWT tokens.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">SECURE_API</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> server.make (8080)
+
+            <span class="comment">-- Public routes (no auth)</span>
+            server.on_post (<span class="string">"/auth/login"</span>, <span class="keyword">agent</span> handle_login)
+            server.on_post (<span class="string">"/auth/register"</span>, <span class="keyword">agent</span> handle_register)
+
+            <span class="comment">-- Protected routes (auth required)</span>
+            server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_AUTH_MIDDLEWARE</span>}.make_bearer (jwt_secret))
+            server.on_get (<span class="string">"/api/profile"</span>, <span class="keyword">agent</span> handle_profile)
+            server.on_get (<span class="string">"/api/data"</span>, <span class="keyword">agent</span> handle_data)
+
+            server.start
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Auth Handlers</span>
+
+    handle_login (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">local</span>
+            username, password, token: STRING
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> json.parse (req.body) <span class="keyword">as</span> v <span class="keyword">and then</span> v.is_object <span class="keyword">then</span>
+                <span class="keyword">if</span> <span class="keyword">attached</span> v.as_object.string_item (<span class="string">"username"</span>) <span class="keyword">as</span> u <span class="keyword">and</span>
+                   <span class="keyword">attached</span> v.as_object.string_item (<span class="string">"password"</span>) <span class="keyword">as</span> p <span class="keyword">then</span>
+
+                    <span class="keyword">if</span> validate_credentials (u, p) <span class="keyword">then</span>
+                        token := generate_jwt (u)
+                        res.send_json_object (json.new_object
+                            .put_string (<span class="string">"token"</span>, token)
+                            .put_integer (<span class="string">"expires_in"</span>, 3600))
+                    <span class="keyword">else</span>
+                        res.set_status (401)
+                        res.send_json (<span class="string">'{"error": "Invalid credentials"}'</span>)
+                    <span class="keyword">end</span>
+                <span class="keyword">else</span>
+                    res.set_status (400)
+                    res.send_json (<span class="string">'{"error": "Username and password required"}'</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    handle_profile (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+            <span class="comment">-- This handler only reached if auth passes</span>
+        <span class="keyword">do</span>
+            res.send_json (<span class="string">'{"username": "authenticated_user", "role": "user"}'</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    jwt_secret: STRING = <span class="string">"your-256-bit-secret"</span>
+    json: <span class="type">SIMPLE_JSON</span>
+    server: <span class="type">SIMPLE_WEB_SERVER</span>
+
+    validate_credentials (u, p: STRING): BOOLEAN
+        <span class="comment">-- In real app, check database</span>
+        <span class="keyword">do</span>
+            Result := u.same_string (<span class="string">"admin"</span>) <span class="keyword">and</span> p.same_string (<span class="string">"secret"</span>)
+        <span class="keyword">end</span>
+
+    generate_jwt (username: STRING): STRING
+        <span class="comment">-- Generate JWT token (simplified)</span>
+        <span class="keyword">do</span>
+            <span class="comment">-- Use simple_jwt library for real implementation</span>
+            Result := <span class="string">"eyJ..."</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="webhook" class="recipe">
+            <h2>Recipe 5: Webhook Receiver</h2>
+            <p>Handle incoming webhooks from external services.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">WEBHOOK_RECEIVER</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make (a_secret: STRING)
+        <span class="keyword">do</span>
+            webhook_secret := a_secret
+            <span class="keyword">create</span> json
+
+            <span class="keyword">create</span> server.make (9000)
+            server.on_post (<span class="string">"/webhook/github"</span>, <span class="keyword">agent</span> handle_github)
+            server.on_post (<span class="string">"/webhook/stripe"</span>, <span class="keyword">agent</span> handle_stripe)
+            server.start
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Handlers</span>
+
+    handle_github (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">local</span>
+            event_type: STRING
+        <span class="keyword">do</span>
+            <span class="comment">-- Verify signature</span>
+            <span class="keyword">if</span> not verify_github_signature (req) <span class="keyword">then</span>
+                res.set_status (401)
+                res.send_json (<span class="string">'{"error": "Invalid signature"}'</span>)
+                <span class="keyword">return</span>
+            <span class="keyword">end</span>
+
+            <span class="comment">-- Get event type from header</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.header (<span class="string">"X-GitHub-Event"</span>) <span class="keyword">as</span> evt <span class="keyword">then</span>
+                event_type := evt
+
+                <span class="keyword">if</span> event_type.same_string (<span class="string">"push"</span>) <span class="keyword">then</span>
+                    handle_push_event (req.body)
+                <span class="keyword">elseif</span> event_type.same_string (<span class="string">"pull_request"</span>) <span class="keyword">then</span>
+                    handle_pr_event (req.body)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+
+            res.send_json (<span class="string">'{"received": true}'</span>)
+        <span class="keyword">end</span>
+
+    handle_stripe (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> json.parse (req.body) <span class="keyword">as</span> v <span class="keyword">then</span>
+                <span class="keyword">if</span> <span class="keyword">attached</span> json.query_string (v, <span class="string">"$.type"</span>) <span class="keyword">as</span> event_type <span class="keyword">then</span>
+                    <span class="keyword">if</span> event_type.same_string (<span class="string">"payment_intent.succeeded"</span>) <span class="keyword">then</span>
+                        <span class="comment">-- Handle successful payment</span>
+                        print (<span class="string">"Payment received!%N"</span>)
+                    <span class="keyword">elseif</span> event_type.same_string (<span class="string">"customer.subscription.deleted"</span>) <span class="keyword">then</span>
+                        <span class="comment">-- Handle subscription cancellation</span>
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+
+            res.send_json (<span class="string">'{"received": true}'</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    webhook_secret: STRING
+    json: <span class="type">SIMPLE_JSON</span>
+    server: <span class="type">SIMPLE_WEB_SERVER</span>
+
+    verify_github_signature (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>): BOOLEAN
+        <span class="comment">-- Verify HMAC-SHA256 signature</span>
+        <span class="keyword">do</span>
+            <span class="comment">-- Use simple_encryption for real implementation</span>
+            Result := True
+        <span class="keyword">end</span>
+
+    handle_push_event (body: STRING)
+        <span class="keyword">do</span>
+            print (<span class="string">"Push event received%N"</span>)
+        <span class="keyword">end</span>
+
+    handle_pr_event (body: STRING)
+        <span class="keyword">do</span>
+            print (<span class="string">"PR event received%N"</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="proxy" class="recipe">
+            <h2>Recipe 6: Simple API Proxy</h2>
+            <p>Proxy requests to another service with modifications.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">API_PROXY</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> client.make
+
+            <span class="keyword">create</span> server.make (3000)
+            server.use (<span class="keyword">create</span> {<span class="type">SIMPLE_WEB_CORS_MIDDLEWARE</span>}.make)
+            server.on_get (<span class="string">"/proxy/*"</span>, <span class="keyword">agent</span> proxy_get)
+            server.on_post (<span class="string">"/proxy/*"</span>, <span class="keyword">agent</span> proxy_post)
+            server.start
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span>
+
+    proxy_get (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">local</span>
+            target_url: STRING
+            response: <span class="type">SIMPLE_WEB_RESPONSE</span>
+            request: <span class="type">SIMPLE_WEB_REQUEST</span>
+        <span class="keyword">do</span>
+            <span class="comment">-- Transform /proxy/users -> https://api.example.com/users</span>
+            target_url := target_base + req.path.substring (7, req.path.count)
+
+            <span class="keyword">create</span> request.make_get (target_url)
+
+            <span class="comment">-- Forward relevant headers</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.header (<span class="string">"Authorization"</span>) <span class="keyword">as</span> auth <span class="keyword">then</span>
+                request.with_header (<span class="string">"Authorization"</span>, auth).do_nothing
+            <span class="keyword">end</span>
+
+            <span class="comment">-- Add API key for target service</span>
+            request.with_header (<span class="string">"X-API-Key"</span>, target_api_key).do_nothing
+
+            response := client.execute (request)
+
+            <span class="comment">-- Forward response</span>
+            res.set_status (response.status_code)
+            res.send_json (response.body)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    client: <span class="type">SIMPLE_WEB_CLIENT</span>
+    server: <span class="type">SIMPLE_WEB_SERVER</span>
+    target_base: STRING = <span class="string">"https://api.example.com"</span>
+    target_api_key: STRING = <span class="string">"secret-key"</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="file-upload" class="recipe">
+            <h2>Recipe 7: File Upload Handler</h2>
+            <p>Handle multipart file uploads.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">FILE_UPLOAD_API</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> server.make (8080)
+            <span class="keyword">create</span> sanitizer
+
+            server.on_post (<span class="string">"/upload"</span>, <span class="keyword">agent</span> handle_upload)
+            server.on_get (<span class="string">"/files/{filename}"</span>, <span class="keyword">agent</span> serve_file)
+
+            server.start
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span>
+
+    handle_upload (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">local</span>
+            filename: STRING
+            file: PLAIN_TEXT_FILE
+        <span class="keyword">do</span>
+            <span class="comment">-- In real implementation, parse multipart body</span>
+            <span class="comment">-- This is simplified</span>
+
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.header (<span class="string">"X-Filename"</span>) <span class="keyword">as</span> fn <span class="keyword">then</span>
+                <span class="comment">-- Sanitize filename</span>
+                filename := sanitizer.sanitize_path (fn)
+
+                <span class="keyword">if</span> sanitizer.is_safe_path (filename) <span class="keyword">then</span>
+                    <span class="keyword">create</span> file.make_create_read_write (upload_dir + filename)
+                    file.put_string (req.body)
+                    file.close
+
+                    res.set_status (201)
+                    res.send_json (<span class="string">'{"filename": "'</span> + filename + <span class="string">'"}'</span>)
+                <span class="keyword">else</span>
+                    res.set_status (400)
+                    res.send_json (<span class="string">'{"error": "Invalid filename"}'</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    serve_file (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>)
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.path_parameter (<span class="string">"filename"</span>) <span class="keyword">as</span> fn <span class="keyword">then</span>
+                <span class="keyword">if</span> sanitizer.is_safe_path (fn) <span class="keyword">then</span>
+                    res.send_file (upload_dir + fn)
+                <span class="keyword">else</span>
+                    res.set_status (400)
+                    res.send_json (<span class="string">'{"error": "Invalid path"}'</span>)
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    server: <span class="type">SIMPLE_WEB_SERVER</span>
+    sanitizer: <span class="type">SIMPLE_WEB_INPUT_SANITIZER</span>
+    upload_dir: STRING = <span class="string">"/var/uploads/"</span>
+
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="rate-limiting" class="recipe">
+            <h2>Recipe 8: Rate-Limited API</h2>
+            <p>Add rate limiting to your API.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">RATE_LIMIT_MIDDLEWARE</span>
+
+<span class="keyword">inherit</span>
+    <span class="type">SIMPLE_WEB_MIDDLEWARE</span>
+
+<span class="keyword">create</span>
+    make
+
+<span class="keyword">feature</span> {NONE}
+
+    make (a_max_requests: INTEGER; a_window_seconds: INTEGER)
+        <span class="keyword">do</span>
+            max_requests := a_max_requests
+            window_seconds := a_window_seconds
+            <span class="keyword">create</span> request_counts.make (100)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span>
+
+    process (req: <span class="type">SIMPLE_WEB_SERVER_REQUEST</span>; res: <span class="type">SIMPLE_WEB_SERVER_RESPONSE</span>): BOOLEAN
+        <span class="keyword">local</span>
+            client_ip: STRING
+            count: INTEGER
+        <span class="keyword">do</span>
+            <span class="comment">-- Get client IP (simplified)</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> req.header (<span class="string">"X-Forwarded-For"</span>) <span class="keyword">as</span> ip <span class="keyword">then</span>
+                client_ip := ip
+            <span class="keyword">else</span>
+                client_ip := <span class="string">"unknown"</span>
+            <span class="keyword">end</span>
+
+            <span class="comment">-- Check rate limit</span>
+            <span class="keyword">if</span> request_counts.has (client_ip) <span class="keyword">then</span>
+                count := request_counts.item (client_ip) + 1
+            <span class="keyword">else</span>
+                count := 1
+            <span class="keyword">end</span>
+
+            <span class="keyword">if</span> count > max_requests <span class="keyword">then</span>
+                res.set_status (429)  <span class="comment">-- Too Many Requests</span>
+                res.set_header (<span class="string">"Retry-After"</span>, window_seconds.out)
+                res.send_json (<span class="string">'{"error": "Rate limit exceeded"}'</span>)
+                Result := False
+            <span class="keyword">else</span>
+                request_counts.force (count, client_ip)
+                res.set_header (<span class="string">"X-RateLimit-Remaining"</span>, (max_requests - count).out)
+                Result := True
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> {NONE}
+
+    max_requests: INTEGER
+    window_seconds: INTEGER
+    request_counts: HASH_TABLE [INTEGER, STRING]
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage</span>
+server.use (<span class="keyword">create</span> {<span class="type">RATE_LIMIT_MIDDLEWARE</span>}.make (100, 60))  <span class="comment">-- 100 req/min</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem of focused, single-purpose Eiffel libraries.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>
