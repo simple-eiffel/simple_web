@@ -1,0 +1,9 @@
+{
+  "name": "simple_web",
+  "version": "0.1.0",
+  "description": "Simple Eiffel library: simple_web",
+  "author": "Larry Rix",
+  "license": "MIT",
+  "category": "web",
+  "keywords": ["web", "framework", "routing", "middleware"]
+}
