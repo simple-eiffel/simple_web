@@ -16,20 +16,20 @@
 			<void_safety support="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
-		<library name="simple_datetime" location="$SIMPLE_DATETIME\simple_datetime.ecf"/>
+		<library name="simple_datetime" location="$SIMPLE_EIFFEL/simple_datetime/simple_datetime.ecf"/>
 		<library name="curl_http_client" location="$ISE_LIBRARY\contrib\library\network\http_client\curl_http_client.ecf"/>
 		<library name="default_standalone" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf\default\standalone.ecf"/>
 		<library name="encoder" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\text\encoder\encoder.ecf"/>
-		<library name="simple_process" location="$SIMPLE_PROCESS\simple_process.ecf"/>
+		<library name="simple_process" location="$SIMPLE_EIFFEL/simple_process/simple_process.ecf"/>
 		<library name="http_authorization" location="$ISE_LIBRARY\contrib\library\web\authentication\http_authorization\http_authorization.ecf"/>
 		<library name="http_network" location="$ISE_LIBRARY\contrib\library\network\http_network\http_network.ecf"/>
 		<library name="httpd" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\httpd\httpd.ecf"/>
 		<library name="jwt" location="$ISE_LIBRARY\contrib\library\web\authentication\jwt\jwt.ecf"/>
 		<library name="jwt_openssl" location="$ISE_LIBRARY\contrib\library\web\authentication\jwt_openssl_ext\jwt_openssl.ecf"/>
 		<library name="oauth_module" location="$ISE_LIBRARY\unstable\library\web\cms\modules\oauth20\oauth20.ecf"/>
-		<library name="simple_json" location="$SIMPLE_JSON\simple_json.ecf"/>
+		<library name="simple_json" location="$SIMPLE_EIFFEL/simple_json/simple_json.ecf"/>
 		<library name="standalone_launcher" location="$ISE_LIBRARY\unstable\library\web\cms\launcher\standalone.ecf"/>
-		<library name="simple_testing" location="$SIMPLE_TESTING\simple_testing.ecf"/>
+		<library name="simple_testing" location="$SIMPLE_EIFFEL/simple_testing/simple_testing.ecf"/>
 		<library name="testing" location="$ISE_LIBRARY\library\testing\testing.ecf"/>
 		<library name="uri" location="$ISE_LIBRARY\library\text\uri\uri.ecf"/>
 		<library name="uri_launcher" location="$ISE_LIBRARY\library\runtime\process\uri_launcher\uri_launcher.ecf"/>
@@ -68,10 +68,10 @@
 		<capability>
 			<concurrency use="thread"/>
 		</capability>
-		<library name="simple_randomizer" location="$SIMPLE_RANDOMIZER\simple_randomizer.ecf"/>
-		<library name="simple_sql" location="$SIMPLE_SQL\simple_sql.ecf"/>
+		<library name="simple_randomizer" location="$SIMPLE_EIFFEL/simple_randomizer/simple_randomizer.ecf"/>
+		<library name="simple_sql" location="$SIMPLE_EIFFEL/simple_sql/simple_sql.ecf"/>
 		<cluster name="wms_api_src" location=".\src\wms_api\" recursive="true"/>
-		<cluster name="wms_domain" location="$SIMPLE_SQL\src\wms\" recursive="true">
+		<cluster name="wms_domain" location="$SIMPLE_EIFFEL/simple_sql/src/wms/" recursive="true">
 			<file_rule>
 				<exclude>/profile$</exclude>
 			</file_rule>
@@ -90,9 +90,9 @@
 		<capability>
 			<concurrency use="thread"/>
 		</capability>
-		<library name="simple_sql" location="$SIMPLE_SQL\simple_sql.ecf"/>
+		<library name="simple_sql" location="$SIMPLE_EIFFEL/simple_sql/simple_sql.ecf"/>
 		<cluster name="todo_api_src" location=".\src\todo_api\" recursive="true"/>
-		<cluster name="todo_domain" location="$SIMPLE_SQL\src\todo_app\" recursive="true"/>
+		<cluster name="todo_domain" location="$SIMPLE_EIFFEL/simple_sql/src/todo_app/" recursive="true"/>
 	</target>
 	<target name="todo_api_tests" extends="todo_api">
 		<root class="ANY" feature="default_create"/>
