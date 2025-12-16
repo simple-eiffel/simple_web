@@ -28,6 +28,7 @@
 		<library name="jwt_openssl" location="$ISE_LIBRARY\contrib\library\web\authentication\jwt_openssl_ext\jwt_openssl.ecf"/>
 		<library name="oauth_module" location="$ISE_LIBRARY\unstable\library\web\cms\modules\oauth20\oauth20.ecf"/>
 		<library name="simple_json" location="$SIMPLE_EIFFEL/simple_json/simple_json.ecf"/>
+		<library name="simple_logger" location="$SIMPLE_EIFFEL/simple_logger/simple_logger.ecf"/>
 		<library name="standalone_launcher" location="$ISE_LIBRARY\unstable\library\web\cms\launcher\standalone.ecf"/>
 		<library name="simple_testing" location="$SIMPLE_EIFFEL/simple_testing/simple_testing.ecf"/>
 		<library name="testing" location="$ISE_LIBRARY\library\testing\testing.ecf"/>
