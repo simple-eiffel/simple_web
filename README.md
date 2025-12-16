@@ -108,14 +108,14 @@ end
 
 ## Installation
 
-1. Set environment variable:
+1. Set environment variable (one-time setup for all simple_* libraries):
 ```bash
-export SIMPLE_WEB=/path/to/simple_web
+export SIMPLE_EIFFEL=/d/prod
 ```
 
 2. Add to ECF:
 ```xml
-<library name="simple_web" location="$SIMPLE_WEB/simple_web.ecf"/>
+<library name="simple_web" location="$SIMPLE_EIFFEL/simple_web/simple_web.ecf"/>
 ```
 
 ## Dependencies
