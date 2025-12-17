@@ -38,7 +38,7 @@ feature {NONE} -- Initialization
 	make
 			-- Create quick web facade.
 		do
-			create logger.make ("web_quick")
+			create logger.make
 			port := 8080
 		end
 
