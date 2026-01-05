@@ -55,9 +55,11 @@ feature -- Quick Server Setup
 			port := a_port
 			static_folder := a_folder
 			create server.make (a_port)
-			server.on_get ("/*", agent handle_static_file)
-			logger.info ("Starting static file server...")
-			server.start
+			if attached server as s then
+				s.on_get ("/*", agent handle_static_file)
+				logger.info ("Starting static file server...")
+				s.start
+			end
 		end
 
 	json_api (a_port: INTEGER)
@@ -145,48 +147,38 @@ feature -- Server Control
 
 feature -- Response Helpers
 
-	send_json (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_json: SIMPLE_JSON_VALUE)
+	quick_send_json (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_json: SIMPLE_JSON_VALUE)
 			-- Send JSON response with proper content type.
 		require
 			response_not_void: a_response /= Void
 			json_not_void: a_json /= Void
 		do
-			a_response.set_header ("Content-Type", "application/json")
-			a_response.set_body (a_json.to_json_string.to_string_8)
+			a_response.send_json (a_json.to_json_string.to_string_8)
 		end
 
-	send_text (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_text: STRING)
+	quick_send_text (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_text: STRING)
 			-- Send plain text response.
 		require
 			response_not_void: a_response /= Void
 		do
-			a_response.set_header ("Content-Type", "text/plain")
-			a_response.set_body (a_text)
+			a_response.send_text (a_text)
 		end
 
-	send_html (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_html: STRING)
+	quick_send_html (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_html: STRING)
 			-- Send HTML response.
 		require
 			response_not_void: a_response /= Void
 		do
-			a_response.set_header ("Content-Type", "text/html")
-			a_response.set_body (a_html)
+			a_response.send_html (a_html)
 		end
 
-	send_error (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_code: INTEGER; a_message: STRING)
+	quick_send_error (a_response: SIMPLE_WEB_SERVER_RESPONSE; a_code: INTEGER; a_message: STRING)
 			-- Send error response.
 		require
 			response_not_void: a_response /= Void
 			valid_code: a_code >= 400
-		local
-			l_json: SIMPLE_JSON_OBJECT
 		do
-			create l_json.make_empty
-			l_json.put_string (a_message, "error")
-			l_json.put_integer (a_code, "status")
-			a_response.set_status_code (a_code)
-			a_response.set_header ("Content-Type", "application/json")
-			a_response.set_body (l_json.to_json_string.to_string_8)
+			a_response.send_error (a_code, a_message)
 		end
 
 feature -- Status
@@ -237,12 +229,10 @@ feature {NONE} -- Implementation
 
 					-- Set content type based on extension
 					l_ext := l_path.substring (l_path.last_index_of ('.', l_path.count) + 1, l_path.count)
-					res.set_header ("Content-Type", mime_type_for (l_ext))
-					res.set_body (l_content)
+					res.send_binary (l_content, mime_type_for (l_ext))
 					logger.debug_log ("Served: " + l_path)
 				else
-					res.set_status_code (404)
-					res.set_body ("Not Found: " + l_path)
+					res.send_not_found ("Not Found: " + l_path)
 					logger.debug_log ("Not found: " + l_path)
 				end
 			end
