@@ -153,7 +153,7 @@ feature -- Processing
 
 			-- 1. Check endpoint-specific circuit breaker
 			l_breaker := breaker_for_path (l_path)
-			if l_proceed and then attached l_breaker as cb then
+			if l_proceed and then attached l_breaker as al_cb then
 				if not cb.allow_request then
 					-- Circuit is open - reject immediately
 					respond_circuit_open (a_response, l_path)
@@ -163,14 +163,14 @@ feature -- Processing
 			end
 
 			-- 2. Check main policy circuit breaker
-			if l_proceed and then attached policy as p then
+			if l_proceed and then attached policy as al_p then
 				if p.has_circuit_breaker and then p.is_circuit_open then
 					respond_circuit_open (a_response, l_path)
 					l_proceed := False
 				end
 
 				-- 3. Check bulkhead
-				if l_proceed and then attached p.bulkhead as bh then
+				if l_proceed and then attached p.bulkhead as al_bh then
 					l_bulkhead_acquired := bh.acquire
 					if not l_bulkhead_acquired then
 						respond_bulkhead_full (a_response, l_path)
@@ -186,8 +186,8 @@ feature -- Processing
 			end
 
 			-- 5. Release bulkhead
-			if attached policy as p and then attached p.bulkhead as bh then
-				bh.release_if_held
+			if attached policy as p and then attached p.bulkhead as al_bh then
+				al_bh.release_if_held
 			end
 		end
 
@@ -241,22 +241,22 @@ feature {NONE} -- Implementation
 	record_success (a_breaker: detachable SIMPLE_CIRCUIT_BREAKER)
 			-- Record success on breakers.
 		do
-			if attached a_breaker as cb then
-				cb.record_success
+			if attached a_breaker as al_cb then
+				al_cb.record_success
 			end
-			if attached policy as p and then attached p.circuit_breaker as pcb then
-				pcb.record_success
+			if attached policy as p and then attached p.circuit_breaker as al_pcb then
+				al_pcb.record_success
 			end
 		end
 
 	record_failure (a_breaker: detachable SIMPLE_CIRCUIT_BREAKER)
 			-- Record failure on breakers.
 		do
-			if attached a_breaker as cb then
-				cb.record_failure
+			if attached a_breaker as al_cb then
+				al_cb.record_failure
 			end
-			if attached policy as p and then attached p.circuit_breaker as pcb then
-				pcb.record_failure
+			if attached policy as p and then attached p.circuit_breaker as al_pcb then
+				al_pcb.record_failure
 			end
 		end
 
@@ -302,16 +302,16 @@ feature {NONE} -- Notifications
 	notify_circuit_open (a_path: STRING; a_breaker: SIMPLE_CIRCUIT_BREAKER)
 			-- Notify that circuit opened.
 		do
-			if attached on_circuit_open as handler then
-				handler.call ([a_path, a_breaker])
+			if attached on_circuit_open as al_handler then
+				al_handler.call ([a_path, a_breaker])
 			end
 		end
 
 	notify_bulkhead_reject (a_path: STRING)
 			-- Notify that bulkhead rejected request.
 		do
-			if attached on_bulkhead_reject as handler then
-				handler.call ([a_path])
+			if attached on_bulkhead_reject as al_handler then
+				al_handler.call ([a_path])
 			end
 		end
 

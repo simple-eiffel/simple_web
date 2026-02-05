@@ -295,8 +295,8 @@ feature -- Status
 	is_circuit_open: BOOLEAN
 			-- Is circuit breaker currently open?
 		do
-			if attached circuit_breaker as cb then
-				Result := cb.is_open
+			if attached circuit_breaker as al_cb then
+				Result := al_cb.is_open
 			end
 		end
 
@@ -316,7 +316,7 @@ feature -- Execution
 			l_proceed := True
 
 			-- 1. Bulkhead check
-			if l_proceed and then attached bulkhead as bh then
+			if l_proceed and then attached bulkhead as al_bh then
 				l_acquired := bh.acquire
 				if not l_acquired then
 					last_error_message := "Bulkhead full - request rejected"
@@ -329,7 +329,7 @@ feature -- Execution
 			end
 
 			-- 2. Circuit breaker check
-			if l_proceed and then attached circuit_breaker as cb then
+			if l_proceed and then attached circuit_breaker as al_cb then
 				if not cb.allow_request then
 					last_error_message := "Circuit breaker open - request blocked"
 					release_bulkhead
@@ -362,7 +362,7 @@ feature -- Execution
 			l_proceed := True
 
 			-- 1. Bulkhead check
-			if l_proceed and then attached bulkhead as bh then
+			if l_proceed and then attached bulkhead as al_bh then
 				l_acquired := bh.acquire
 				if not l_acquired then
 					last_error_message := "Bulkhead full - request rejected"
@@ -375,7 +375,7 @@ feature -- Execution
 			end
 
 			-- 2. Circuit breaker check
-			if l_proceed and then attached circuit_breaker as cb then
+			if l_proceed and then attached circuit_breaker as al_cb then
 				if not cb.allow_request then
 					last_error_message := "Circuit breaker open - request blocked"
 					release_bulkhead
@@ -524,32 +524,32 @@ feature {NONE} -- Implementation
 	execute_fallback: detachable ANY
 			-- Execute fallback handler if configured.
 		do
-			if attached fallback_handler as fh then
-				Result := fh.item (Void)
+			if attached fallback_handler as al_fh then
+				Result := al_fh.item (Void)
 			end
 		end
 
 	handle_success
 			-- Handle successful execution.
 		do
-			if attached circuit_breaker as cb then
-				cb.record_success
+			if attached circuit_breaker as al_cb then
+				al_cb.record_success
 			end
 		end
 
 	handle_failure
 			-- Handle failed execution.
 		do
-			if attached circuit_breaker as cb then
-				cb.record_failure
+			if attached circuit_breaker as al_cb then
+				al_cb.record_failure
 			end
 		end
 
 	release_bulkhead
 			-- Release bulkhead permit if held.
 		do
-			if attached bulkhead as bh then
-				bh.release_if_held
+			if attached bulkhead as al_bh then
+				al_bh.release_if_held
 			end
 		end
 

@@ -204,10 +204,10 @@ feature {NONE} -- Handlers: List
 		do
 			l_status := a_req.query_parameter ("status")
 
-			if attached l_status as status then
-				if status.same_string ("completed") then
+			if attached l_status as al_status then
+				if al_status.same_string ("completed") then
 					l_todos := todo_app.completed_todos
-				elseif status.same_string ("incomplete") then
+				elseif al_status.same_string ("incomplete") then
 					l_todos := todo_app.incomplete_todos
 				else
 					l_todos := todo_app.all_todos
@@ -234,7 +234,7 @@ feature {NONE} -- Handlers: CRUD
 			l_id_param := a_req.path_parameter ("id")
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
-				if attached todo_app.find_todo (id_str.to_integer_64) as l_todo then
+				if attached todo_app.find_todo (id_str.to_integer_64) as al_l_todo then
 					res.send_json_object (todo_to_json (l_todo))
 				else
 					send_error (res, 404, "Todo not found")
@@ -257,10 +257,10 @@ feature {NONE} -- Handlers: CRUD
 		do
 			l_json := a_req.body_as_json
 
-			if attached l_json as json then
+			if attached l_json as al_json then
 				-- [F3] FRICTIONLESS: Single call checks all required fields
-				if json.has_all_keys (<<"title", "priority">>) then
-					if attached json.string_item ("title") as t then
+				if al_json.has_all_keys (<<"title", "priority">>) then
+					if attached al_json.string_item ("title") as al_t then
 						l_title := t.to_string_8
 					else
 						l_title := ""
@@ -270,11 +270,11 @@ feature {NONE} -- Handlers: CRUD
 					l_priority := json.integer_32_item ("priority")
 
 					-- [F5] FRICTIONLESS: Optional fields with single call
-					if attached json.optional_string ("description") as d then
-						l_description := d.to_string_8
+					if attached json.optional_string ("description") as al_d then
+						l_description := al_d.to_string_8
 					end
-					if attached json.optional_string ("due_date") as dd then
-						l_due_date := dd.to_string_8
+					if attached json.optional_string ("due_date") as al_dd then
+						l_due_date := al_dd.to_string_8
 					end
 
 					-- Validate
@@ -307,7 +307,7 @@ feature {NONE} -- Handlers: CRUD
 
 			if not attached l_id_param as id_str or else not id_str.is_integer_64 then
 				send_error (res, 400, "Invalid todo ID")
-			elseif not attached l_json as json then
+			elseif not attached l_json as al_json then
 				send_error (res, 400, "Invalid JSON body")
 			else
 				l_todo := todo_app.find_todo (id_str.to_integer_64)
@@ -350,7 +350,7 @@ feature {NONE} -- Handlers: CRUD
 
 			if not attached l_id_param as id_str or else not id_str.is_integer_64 then
 				send_error (res, 400, "Invalid todo ID")
-			elseif not attached l_json as json then
+			elseif not attached l_json as al_json then
 				send_error (res, 400, "Invalid JSON body")
 			else
 				l_todo := todo_app.find_todo (id_str.to_integer_64)
@@ -406,7 +406,7 @@ feature {NONE} -- Handlers: Actions
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.complete_todo (id_str.to_integer_64) then
-					if attached todo_app.find_todo (id_str.to_integer_64) as l_todo then
+					if attached todo_app.find_todo (id_str.to_integer_64) as al_l_todo then
 						res.send_json_object (todo_to_json (l_todo))
 					else
 						send_error (res, 500, "Todo updated but not found")
@@ -428,7 +428,7 @@ feature {NONE} -- Handlers: Actions
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.uncomplete_todo (id_str.to_integer_64) then
-					if attached todo_app.find_todo (id_str.to_integer_64) as l_todo then
+					if attached todo_app.find_todo (id_str.to_integer_64) as al_l_todo then
 						res.send_json_object (todo_to_json (l_todo))
 					else
 						send_error (res, 500, "Todo updated but not found")
@@ -479,14 +479,14 @@ feature {NONE} -- JSON Conversion
 			create Result.make
 			Result.put_integer (a_todo.id, "id").do_nothing
 			Result.put_string (a_todo.title, "title").do_nothing
-			if attached a_todo.description as d then
+			if attached a_todo.description as al_d then
 				Result.put_string (d, "description").do_nothing
 			else
 				Result.put_null ("description").do_nothing
 			end
 			Result.put_integer (a_todo.priority.to_integer_64, "priority").do_nothing
 			Result.put_boolean (a_todo.is_completed, "is_completed").do_nothing
-			if attached a_todo.due_date as dd then
+			if attached a_todo.due_date as al_dd then
 				Result.put_string (dd, "due_date").do_nothing
 			else
 				Result.put_null ("due_date").do_nothing
@@ -503,22 +503,22 @@ feature {NONE} -- JSON Conversion
 			-- [F3] FRICTIONLESS: Single precondition check
 			has_required: a_json.has_all_keys (<<"title", "priority">>)
 		do
-			if attached a_json.string_item ("title") as t then
-				a_todo.set_title (t.to_string_8)
+			if attached a_json.string_item ("title") as al_t then
+				a_todo.set_title (al_t.to_string_8)
 			end
 
 			-- [F4] FRICTIONLESS: Direct INTEGER_32 extraction
 			a_todo.set_priority (a_json.integer_32_item ("priority"))
 
 			-- [F5] FRICTIONLESS: Optional fields with single call
-			if attached a_json.optional_string ("description") as d then
-				a_todo.set_description (d.to_string_8)
+			if attached a_json.optional_string ("description") as al_d then
+				a_todo.set_description (al_d.to_string_8)
 			else
 				a_todo.set_description (Void)
 			end
 
-			if attached a_json.optional_string ("due_date") as dd then
-				a_todo.set_due_date (dd.to_string_8)
+			if attached a_json.optional_string ("due_date") as al_dd then
+				a_todo.set_due_date (al_dd.to_string_8)
 			else
 				a_todo.set_due_date (Void)
 			end
@@ -537,8 +537,8 @@ feature {NONE} -- JSON Conversion
 			-- Note: PATCH inherently requires checking each field - this is unavoidable complexity.
 		do
 			if a_json.has_key ("title") then
-				if attached a_json.string_item ("title") as t then
-					a_todo.set_title (t.to_string_8)
+				if attached a_json.string_item ("title") as al_t then
+					a_todo.set_title (al_t.to_string_8)
 				end
 			end
 
@@ -551,16 +551,16 @@ feature {NONE} -- JSON Conversion
 			-- we need to distinguish between "key not present" (don't change) and
 			-- "key present with null" (set to Void). This is inherent PATCH complexity.
 			if a_json.has_key ("description") then
-				if attached a_json.string_item ("description") as d then
-					a_todo.set_description (d.to_string_8)
+				if attached a_json.string_item ("description") as al_d then
+					a_todo.set_description (al_d.to_string_8)
 				else
 					a_todo.set_description (Void)
 				end
 			end
 
 			if a_json.has_key ("due_date") then
-				if attached a_json.string_item ("due_date") as dd then
-					a_todo.set_due_date (dd.to_string_8)
+				if attached a_json.string_item ("due_date") as al_dd then
+					a_todo.set_due_date (al_dd.to_string_8)
 				else
 					a_todo.set_due_date (Void)
 				end

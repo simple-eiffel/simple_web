@@ -8,7 +8,7 @@ note
 		FRICTION LOG (document each pain point as discovered):
 
 		[F1] JSON BODY PARSING - Every POST handler repeats body_as_json parsing
-		     Current: if attached req.body_as_json as l_json then ... else error
+		     Current: if attached req.body_as_json as al_l_json then ... else error
 		     Desired: Middleware that auto-parses and validates JSON bodies
 
 		[F2] ERROR RESPONSE BOILERPLATE - Every error needs JSON structure
@@ -213,11 +213,11 @@ feature {NONE} -- Handlers: Products
 		do
 			log_request (a_req)
 			l_sku := a_req.path_parameter ("sku")
-			if attached l_sku as sku then
-				if attached wms.find_product_by_sku (sku.to_string_8) as l_product then
+			if attached l_sku as al_sku then
+				if attached wms.find_product_by_sku (al_sku.to_string_8) as al_l_product then
 					res.send_json_object (product_to_json (l_product))
 				else
-					send_error (res, 404, "Product not found: " + sku.to_string_8)
+					send_error (res, 404, "Product not found: " + al_sku.to_string_8)
 				end
 			else
 				send_error (res, 400, "Missing SKU parameter")
@@ -309,15 +309,15 @@ feature {NONE} -- Handlers: Operations
 			log_request (a_req)
 			l_json := a_req.body_as_json
 
-			if attached l_json as json then
-				if json.has_key ("product_id") and json.has_key ("location_id") and
-				   json.has_key ("quantity") and json.has_key ("user_id") then
-					l_product_id := json.integer_item ("product_id")
-					l_location_id := json.integer_item ("location_id")
-					l_quantity := json.integer_item ("quantity").to_integer_32
-					l_user_id := json.integer_item ("user_id")
+			if attached l_json as al_json then
+				if al_json.has_key ("product_id") and al_json.has_key ("location_id") and
+				   al_json.has_key ("quantity") and al_json.has_key ("user_id") then
+					l_product_id := al_json.integer_item ("product_id")
+					l_location_id := al_json.integer_item ("location_id")
+					l_quantity := al_json.integer_item ("quantity").to_integer_32
+					l_user_id := al_json.integer_item ("user_id")
 
-					if json.has_key ("reference") and then attached json.string_item ("reference") as l_ref then
+					if al_json.has_key ("reference") and then attached al_json.string_item ("reference") as al_l_ref then
 						l_reference := l_ref.to_string_8
 					else
 						l_reference := ""
@@ -361,16 +361,16 @@ feature {NONE} -- Handlers: Operations
 			log_request (a_req)
 			l_json := a_req.body_as_json
 
-			if attached l_json as json then
-				if json.has_key ("product_id") and json.has_key ("from_location_id") and
-				   json.has_key ("to_location_id") and json.has_key ("quantity") and json.has_key ("user_id") then
-					l_product_id := json.integer_item ("product_id")
-					l_from_loc := json.integer_item ("from_location_id")
-					l_to_loc := json.integer_item ("to_location_id")
-					l_quantity := json.integer_item ("quantity").to_integer_32
-					l_user_id := json.integer_item ("user_id")
+			if attached l_json as al_json then
+				if al_json.has_key ("product_id") and al_json.has_key ("from_location_id") and
+				   al_json.has_key ("to_location_id") and al_json.has_key ("quantity") and al_json.has_key ("user_id") then
+					l_product_id := al_json.integer_item ("product_id")
+					l_from_loc := al_json.integer_item ("from_location_id")
+					l_to_loc := al_json.integer_item ("to_location_id")
+					l_quantity := al_json.integer_item ("quantity").to_integer_32
+					l_user_id := al_json.integer_item ("user_id")
 
-					if json.has_key ("reference") and then attached json.string_item ("reference") as l_ref then
+					if al_json.has_key ("reference") and then attached al_json.string_item ("reference") as al_l_ref then
 						l_reference := l_ref.to_string_8
 					else
 						l_reference := ""
@@ -417,13 +417,13 @@ feature {NONE} -- Handlers: Operations
 			log_request (a_req)
 			l_json := a_req.body_as_json
 
-			if attached l_json as json then
-				if json.has_key ("product_id") and json.has_key ("location_id") and
-				   json.has_key ("quantity") and json.has_key ("order_reference") and json.has_key ("user_id") then
-					l_product_id := json.integer_item ("product_id")
-					l_location_id := json.integer_item ("location_id")
-					l_quantity := json.integer_item ("quantity").to_integer_32
-					if attached json.string_item ("order_reference") as l_ord_ref then
+			if attached l_json as al_json then
+				if al_json.has_key ("product_id") and al_json.has_key ("location_id") and
+				   al_json.has_key ("quantity") and al_json.has_key ("order_reference") and al_json.has_key ("user_id") then
+					l_product_id := al_json.integer_item ("product_id")
+					l_location_id := al_json.integer_item ("location_id")
+					l_quantity := al_json.integer_item ("quantity").to_integer_32
+					if attached al_json.string_item ("order_reference") as al_l_ord_ref then
 						l_order_ref := l_ord_ref.to_string_8
 					else
 						l_order_ref := ""
@@ -438,7 +438,7 @@ feature {NONE} -- Handlers: Operations
 
 					if l_quantity > 0 and l_expires > 0 then
 						l_reservation := wms.reserve_stock (l_product_id, l_location_id, l_quantity, l_order_ref, l_user_id, l_expires)
-						if attached l_reservation as r then
+						if attached l_reservation as al_r then
 							res.set_created
 							res.send_json_object (reservation_to_json (r))
 						else
@@ -614,7 +614,7 @@ feature {NONE} -- JSON Conversion
 			Result.put_string (a_prod.description, "description").do_nothing
 			Result.put_string (a_prod.unit_of_measure, "unit_of_measure").do_nothing
 			Result.put_integer (a_prod.min_stock_level.to_integer_64, "min_stock_level").do_nothing
-			if attached a_prod.deleted_at as da then
+			if attached a_prod.deleted_at as al_da then
 				Result.put_string (da, "deleted_at").do_nothing
 			end
 		end

@@ -439,9 +439,9 @@ feature -- Operations
 			if l_response.status_code = 200 then
 				create l_json
 				if attached {SIMPLE_JSON_ARRAY} l_json.decode (l_response.body) as arr and then arr.count > 0 then
-					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as wh then
-						current_warehouse_id := wh.integer_item ("id")
-						if attached wh.string_item ("name") as l_name then
+					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as al_wh then
+						current_warehouse_id := al_wh.integer_item ("id")
+						if attached al_wh.string_item ("name") as al_l_name then
 							log_success ("Selected warehouse: " + l_name.to_string_8 +
 								" (ID: " + current_warehouse_id.out + ")")
 						else
@@ -523,8 +523,8 @@ feature -- Operations
 					if l_response.status_code = 201 then
 						-- Parse reservation ID
 						create l_json
-						if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as res_json then
-							l_reservation_id := res_json.integer_item ("id")
+						if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as al_res_json then
+							l_reservation_id := al_res_json.integer_item ("id")
 							log_success ("  Reserved " + item.quantity.out + "x product " +
 								item.product_id.out + " (reservation " + l_reservation_id.out + ")")
 							operations_count := operations_count + 1
@@ -626,10 +626,10 @@ feature -- Stock Queries
 				l_response := client.get (base_url + "/api/stock/product/" + pid.item.out)
 				if l_response.status_code = 200 then
 					create l_json
-					if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as stock then
+					if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as al_stock then
 						print ("    Product " + pid.item.out + ": " +
-							stock.integer_item ("total_quantity").out + " total, " +
-							stock.integer_item ("available_quantity").out + " available%N")
+							al_stock.integer_item ("total_quantity").out + " total, " +
+							al_stock.integer_item ("available_quantity").out + " available%N")
 					end
 				end
 			end
@@ -644,9 +644,9 @@ feature -- Stock Queries
 			l_response := client.get (base_url + "/api/low-stock")
 			if l_response.status_code = 200 then
 				create l_json
-				if attached {SIMPLE_JSON_ARRAY} l_json.decode (l_response.body) as arr then
-					if arr.count > 0 then
-						print ("  LOW STOCK ALERTS: " + arr.count.out + " products below minimum%N")
+				if attached {SIMPLE_JSON_ARRAY} l_json.decode (l_response.body) as al_arr then
+					if al_arr.count > 0 then
+						print ("  LOW STOCK ALERTS: " + al_arr.count.out + " products below minimum%N")
 					else
 						print ("  No low stock alerts%N")
 					end
@@ -755,8 +755,8 @@ feature -- Inventory Validation (Spot Checks)
 			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
 			if l_response.status_code = 200 then
 				create l_json
-				if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as stock then
-					l_actual := stock.integer_item ("total_quantity")
+				if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as al_stock then
+					l_actual := al_stock.integer_item ("total_quantity")
 					if l_actual.to_integer_32 = a_expected_total then
 						log_success ("SPOT CHECK #" + spot_check_count.out + " PASS: " + a_description +
 							" (Product " + a_product_id.out + " = " + l_actual.out + ")")
@@ -784,8 +784,8 @@ feature -- Inventory Validation (Spot Checks)
 			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
 			if l_response.status_code = 200 then
 				create l_json
-				if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as stock then
-					l_actual := stock.integer_item ("available_quantity")
+				if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as al_stock then
+					l_actual := al_stock.integer_item ("available_quantity")
 					if l_actual.to_integer_32 = a_expected_available then
 						log_success ("SPOT CHECK #" + spot_check_count.out + " PASS: " + a_description)
 						spot_check_passed := spot_check_passed + 1
@@ -813,10 +813,10 @@ feature -- Inventory Validation (Spot Checks)
 			if l_response.status_code = 200 then
 				create l_json
 				if attached {SIMPLE_JSON_ARRAY} l_json.decode (l_response.body) as arr and then arr.count > 0 then
-					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as mov then
-						if attached mov.string_item ("movement_type") as l_type then
+					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as al_mov then
+						if attached al_mov.string_item ("movement_type") as al_l_type then
 							l_found := l_type.to_string_8 ~ a_expected_type and
-								mov.integer_item ("quantity").to_integer_32 = a_expected_quantity
+								al_mov.integer_item ("quantity").to_integer_32 = a_expected_quantity
 						end
 					end
 				end
@@ -870,7 +870,7 @@ feature -- Error Scenario Testing
 			-- Should fail with 4xx error
 			if l_response.is_error then
 				log_success ("  Got expected error response: " + l_response.status_code.out)
-				if attached l_response.error_message as l_msg then
+				if attached l_response.error_message as al_l_msg then
 					log_success ("  Error message: " + l_msg)
 				end
 				error_test_passed := error_test_passed + 1
@@ -1427,8 +1427,8 @@ feature {NONE} -- Implementation
 			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
 			if l_response.status_code = 200 then
 				create l_json
-				if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as stock then
-					Result := stock.integer_item ("total_quantity").to_integer_32
+				if attached {SIMPLE_JSON_OBJECT} l_json.decode (l_response.body) as al_stock then
+					Result := al_stock.integer_item ("total_quantity").to_integer_32
 				end
 			end
 		end

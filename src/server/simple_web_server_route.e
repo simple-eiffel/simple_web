@@ -127,9 +127,9 @@ feature -- Matching
 			until
 				i > l_pattern_segments.count or i > l_path_segments.count
 			loop
-				if attached l_pattern_segments.i_th (i) as l_seg then
-					if l_seg.count >= 2 and then l_seg.item (1) = '{' and then l_seg.item (l_seg.count) = '}' then
-						l_param_name := l_seg.substring (2, l_seg.count - 1)
+				if attached l_pattern_segments.i_th (i) as al_l_seg then
+					if al_l_seg.count >= 2 and then al_l_seg.item (1) = '{' and then al_l_seg.item (al_l_seg.count) = '}' then
+						l_param_name := al_l_seg.substring (2, al_l_seg.count - 1)
 						Result.force (l_path_segments.i_th (i), l_param_name)
 					end
 				end

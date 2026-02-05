@@ -55,10 +55,10 @@ feature -- Quick Server Setup
 			port := a_port
 			static_folder := a_folder
 			create server.make (a_port)
-			if attached server as s then
-				s.on_get ("/*", agent handle_static_file)
+			if attached server as al_s then
+				al_s.on_get ("/*", agent handle_static_file)
 				logger.info ("Starting static file server...")
-				s.start
+				al_s.start
 			end
 		end
 
@@ -87,8 +87,8 @@ feature -- Route Registration
 			handler_not_void: a_handler /= Void
 		do
 			logger.debug_log ("Registering GET " + a_path)
-			if attached server as s then
-				s.on_get (a_path, a_handler)
+			if attached server as al_s then
+				al_s.on_get (a_path, a_handler)
 			end
 		end
 
@@ -100,8 +100,8 @@ feature -- Route Registration
 			handler_not_void: a_handler /= Void
 		do
 			logger.debug_log ("Registering POST " + a_path)
-			if attached server as s then
-				s.on_post (a_path, a_handler)
+			if attached server as al_s then
+				al_s.on_post (a_path, a_handler)
 			end
 		end
 
@@ -113,8 +113,8 @@ feature -- Route Registration
 			handler_not_void: a_handler /= Void
 		do
 			logger.debug_log ("Registering PUT " + a_path)
-			if attached server as s then
-				s.on_put (a_path, a_handler)
+			if attached server as al_s then
+				al_s.on_put (a_path, a_handler)
 			end
 		end
 
@@ -126,8 +126,8 @@ feature -- Route Registration
 			handler_not_void: a_handler /= Void
 		do
 			logger.debug_log ("Registering DELETE " + a_path)
-			if attached server as s then
-				s.on_delete (a_path, a_handler)
+			if attached server as al_s then
+				al_s.on_delete (a_path, a_handler)
 			end
 		end
 
@@ -140,8 +140,8 @@ feature -- Server Control
 			server_created: server /= Void
 		do
 			logger.info ("Starting server on port " + port.out)
-			if attached server as s then
-				s.start
+			if attached server as al_s then
+				al_s.start
 			end
 		end
 
@@ -215,7 +215,7 @@ feature {NONE} -- Implementation
 				l_path := "/index.html"
 			end
 
-			if attached static_folder as folder then
+			if attached static_folder as al_folder then
 				l_full_path := folder + l_path.twin
 				l_full_path.replace_substring_all ("/", "\")
 

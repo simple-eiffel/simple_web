@@ -191,9 +191,9 @@ feature -- Response Sending
 			if is_mock then
 				mock_headers.force ("0", "Content-Length")
 				mock_body.wipe_out
-			elseif attached wsf_response as l_response then
-				l_response.set_status_code (status_code)
-				l_response.put_header_text ("Content-Length: 0%R%N%R%N")
+			elseif attached wsf_response as al_l_response then
+				al_l_response.set_status_code (status_code)
+				al_l_response.put_header_text ("Content-Length: 0%R%N%R%N")
 			end
 		ensure
 			mock_body_empty: is_mock implies mock_body.is_empty
@@ -209,9 +209,9 @@ feature -- Response Sending
 			end
 			if is_mock then
 				mock_headers.force (a_url.to_string_8, "Location")
-			elseif attached wsf_response as l_response then
-				l_response.set_status_code (status_code)
-				l_response.put_header_text ("Location: " + a_url + "%R%N%R%N")
+			elseif attached wsf_response as al_l_response then
+				al_l_response.set_status_code (status_code)
+				al_l_response.put_header_text ("Location: " + a_url + "%R%N%R%N")
 			end
 		ensure
 			redirect_status: status_code = 302 or status_code = old status_code
@@ -280,8 +280,8 @@ feature -- Header Setting
 		do
 			if is_mock then
 				mock_headers.force (a_value, a_name)
-			elseif attached wsf_response as l_response then
-				l_response.put_header_text (a_name + ": " + a_value + "%R%N")
+			elseif attached wsf_response as al_l_response then
+				al_l_response.put_header_text (a_name + ": " + a_value + "%R%N")
 			end
 		ensure
 			mock_header_set: is_mock implies mock_headers.has (a_name)
@@ -302,16 +302,16 @@ feature {NONE} -- Implementation
 				mock_headers.force (a_content.count.out, "Content-Length")
 				mock_body.wipe_out
 				mock_body.append (a_content.to_string_8)
-			elseif attached wsf_response as l_response then
-				l_response.set_status_code (status_code)
+			elseif attached wsf_response as al_l_response then
+				al_l_response.set_status_code (status_code)
 				create l_header.make (100)
 				l_header.append ("Content-Type: ")
 				l_header.append (a_content_type)
 				l_header.append ("%R%NContent-Length: ")
 				l_header.append_integer (a_content.count)
 				l_header.append ("%R%N%R%N")
-				l_response.put_header_text (l_header)
-				l_response.put_string (a_content)
+				al_l_response.put_header_text (l_header)
+				al_l_response.put_string (a_content)
 			end
 		end
 

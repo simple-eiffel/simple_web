@@ -100,8 +100,8 @@ feature -- Configuration
 		local
 			l_list: ARRAYED_LIST [STRING]
 		do
-			if attached excluded_paths as l_excluded then
-				l_excluded.extend (a_path)
+			if attached excluded_paths as al_l_excluded then
+				al_l_excluded.extend (a_path)
 			else
 				create l_list.make (5)
 				l_list.extend (a_path)
@@ -142,7 +142,7 @@ feature {NONE} -- Implementation
 		require
 			path_attached: a_path /= Void
 		do
-			if attached excluded_paths as l_excluded then
+			if attached excluded_paths as al_l_excluded then
 				Result := across l_excluded as ic some ic ~ a_path end
 			end
 		end
@@ -171,8 +171,8 @@ feature {NONE} -- Implementation
 			l_auth := a_request.header ("Authorization")
 			if attached l_auth and then l_auth.starts_with ("Bearer ") then
 				l_token := l_auth.substring (8, l_auth.count)
-				if attached token_validator as l_validator then
-					Result := l_validator.item ([l_token])
+				if attached token_validator as al_l_validator then
+					Result := al_l_validator.item ([l_token])
 				end
 			end
 		end
@@ -202,8 +202,8 @@ feature {NONE} -- Implementation
 			l_key: detachable STRING
 		do
 			l_key := a_request.header (api_key_header)
-			if attached l_key and then attached token_validator as l_validator then
-				Result := l_validator.item ([l_key])
+			if attached l_key and then attached token_validator as al_l_validator then
+				Result := al_l_validator.item ([l_key])
 			end
 		end
 

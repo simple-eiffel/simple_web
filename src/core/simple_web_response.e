@@ -105,8 +105,8 @@ feature -- Status Report
 		do
 			if attached body_as_json as l_json and then l_json.is_object then
 				if attached l_json.as_object as l_obj and then l_obj.has_key ("error") then
-					if attached l_obj.string_item ("error") as l_msg then
-						Result := l_msg.to_string_8
+					if attached l_obj.string_item ("error") as al_l_msg then
+						Result := al_l_msg.to_string_8
 					end
 				end
 			end
