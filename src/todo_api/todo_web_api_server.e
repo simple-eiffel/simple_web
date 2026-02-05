@@ -179,7 +179,7 @@ feature {NONE} -- Setup
 
 feature {NONE} -- Handlers: Health
 
-	handle_health (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_health (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- Health check endpoint.
 		local
 			l_json: SIMPLE_JSON_OBJECT
@@ -194,7 +194,7 @@ feature {NONE} -- Handlers: Health
 
 feature {NONE} -- Handlers: List
 
-	handle_list_todos (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_list_todos (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/todos - List todos with optional filters.
 			-- Query params: ?status=completed|incomplete|all (default: all)
 		local
@@ -202,7 +202,7 @@ feature {NONE} -- Handlers: List
 			l_todos: ARRAYED_LIST [TODO_ITEM]
 			l_array: SIMPLE_JSON_ARRAY
 		do
-			l_status := req.query_parameter ("status")
+			l_status := a_req.query_parameter ("status")
 
 			if attached l_status as status then
 				if status.same_string ("completed") then
@@ -226,12 +226,12 @@ feature {NONE} -- Handlers: List
 
 feature {NONE} -- Handlers: CRUD
 
-	handle_get_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/todos/{id} - Get single todo.
 		local
 			l_id_param: detachable STRING_32
 		do
-			l_id_param := req.path_parameter ("id")
+			l_id_param := a_req.path_parameter ("id")
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if attached todo_app.find_todo (id_str.to_integer_64) as l_todo then
@@ -244,7 +244,7 @@ feature {NONE} -- Handlers: CRUD
 			end
 		end
 
-	handle_create_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_create_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/todos - Create new todo.
 			-- Body: {"title": "...", "priority": 1-5, "description": "...", "due_date": "YYYY-MM-DD"}
 		local
@@ -255,7 +255,7 @@ feature {NONE} -- Handlers: CRUD
 			l_due_date: detachable STRING_8
 			l_todo: TODO_ITEM
 		do
-			l_json := req.body_as_json
+			l_json := a_req.body_as_json
 
 			if attached l_json as json then
 				-- [F3] FRICTIONLESS: Single call checks all required fields
@@ -295,15 +295,15 @@ feature {NONE} -- Handlers: CRUD
 			end
 		end
 
-	handle_update_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_update_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- PUT /api/todos/{id} - Full update of todo.
 		local
 			l_id_param: detachable STRING_32
 			l_json: detachable SIMPLE_JSON_OBJECT
 			l_todo: detachable TODO_ITEM
 		do
-			l_id_param := req.path_parameter ("id")
-			l_json := req.body_as_json
+			l_id_param := a_req.path_parameter ("id")
+			l_json := a_req.body_as_json
 
 			if not attached l_id_param as id_str or else not id_str.is_integer_64 then
 				send_error (res, 400, "Invalid todo ID")
@@ -337,7 +337,7 @@ feature {NONE} -- Handlers: CRUD
 			end
 		end
 
-	handle_patch_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_patch_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- PATCH /api/todos/{id} - Partial update of todo.
 			-- [F6] FRICTION: Almost identical to PUT but with optional field handling
 		local
@@ -345,8 +345,8 @@ feature {NONE} -- Handlers: CRUD
 			l_json: detachable SIMPLE_JSON_OBJECT
 			l_todo: detachable TODO_ITEM
 		do
-			l_id_param := req.path_parameter ("id")
-			l_json := req.body_as_json
+			l_id_param := a_req.path_parameter ("id")
+			l_json := a_req.body_as_json
 
 			if not attached l_id_param as id_str or else not id_str.is_integer_64 then
 				send_error (res, 400, "Invalid todo ID")
@@ -376,12 +376,12 @@ feature {NONE} -- Handlers: CRUD
 			end
 		end
 
-	handle_delete_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_delete_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- DELETE /api/todos/{id} - Delete a todo.
 		local
 			l_id_param: detachable STRING_32
 		do
-			l_id_param := req.path_parameter ("id")
+			l_id_param := a_req.path_parameter ("id")
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.delete_todo (id_str.to_integer_64) then
@@ -397,12 +397,12 @@ feature {NONE} -- Handlers: CRUD
 
 feature {NONE} -- Handlers: Actions
 
-	handle_complete_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_complete_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/todos/{id}/complete - Mark as completed.
 		local
 			l_id_param: detachable STRING_32
 		do
-			l_id_param := req.path_parameter ("id")
+			l_id_param := a_req.path_parameter ("id")
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.complete_todo (id_str.to_integer_64) then
@@ -419,12 +419,12 @@ feature {NONE} -- Handlers: Actions
 			end
 		end
 
-	handle_incomplete_todo (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_incomplete_todo (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/todos/{id}/incomplete - Mark as incomplete.
 		local
 			l_id_param: detachable STRING_32
 		do
-			l_id_param := req.path_parameter ("id")
+			l_id_param := a_req.path_parameter ("id")
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.uncomplete_todo (id_str.to_integer_64) then
@@ -441,7 +441,7 @@ feature {NONE} -- Handlers: Actions
 			end
 		end
 
-	handle_clear_completed (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_clear_completed (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- DELETE /api/todos/completed - Delete all completed todos.
 		local
 			l_count: INTEGER
@@ -456,7 +456,7 @@ feature {NONE} -- Handlers: Actions
 
 feature {NONE} -- Handlers: Stats
 
-	handle_stats (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_stats (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/stats - Todo statistics.
 		local
 			l_json: SIMPLE_JSON_OBJECT

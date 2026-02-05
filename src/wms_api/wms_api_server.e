@@ -160,7 +160,7 @@ feature {NONE} -- Route Setup
 
 feature {NONE} -- Handlers: Health
 
-	handle_health (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_health (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- Health check endpoint.
 		local
 			l_json: SIMPLE_JSON_OBJECT
@@ -174,13 +174,13 @@ feature {NONE} -- Handlers: Health
 
 feature {NONE} -- Handlers: Warehouses
 
-	handle_get_warehouses (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_warehouses (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/warehouses - List all warehouses.
 		local
 			l_array: SIMPLE_JSON_ARRAY
 			l_warehouses: ARRAYED_LIST [WMS_WAREHOUSE]
 		do
-			log_request (req)
+			log_request (a_req)
 			l_warehouses := wms.all_warehouses
 			create l_array.make
 			across l_warehouses as wh loop
@@ -191,13 +191,13 @@ feature {NONE} -- Handlers: Warehouses
 
 feature {NONE} -- Handlers: Products
 
-	handle_get_products (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_products (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/products - List all products.
 		local
 			l_array: SIMPLE_JSON_ARRAY
 			l_result: SIMPLE_SQL_RESULT
 		do
-			log_request (req)
+			log_request (a_req)
 			l_result := wms.database.query ("SELECT * FROM products WHERE deleted_at IS NULL ORDER BY sku;")
 			create l_array.make
 			across l_result.rows as row loop
@@ -206,13 +206,13 @@ feature {NONE} -- Handlers: Products
 			res.send_json_array (l_array)
 		end
 
-	handle_get_product_by_sku (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_product_by_sku (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/products/{sku} - Get product by SKU.
 		local
 			l_sku: detachable STRING_32
 		do
-			log_request (req)
-			l_sku := req.path_parameter ("sku")
+			log_request (a_req)
+			l_sku := a_req.path_parameter ("sku")
 			if attached l_sku as sku then
 				if attached wms.find_product_by_sku (sku.to_string_8) as l_product then
 					res.send_json_object (product_to_json (l_product))
@@ -226,15 +226,15 @@ feature {NONE} -- Handlers: Products
 
 feature {NONE} -- Handlers: Locations
 
-	handle_get_locations (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_locations (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/locations/{warehouse_id} - Get locations in warehouse.
 		local
 			l_wh_id: detachable STRING_32
 			l_array: SIMPLE_JSON_ARRAY
 			l_locations: ARRAYED_LIST [WMS_LOCATION]
 		do
-			log_request (req)
-			l_wh_id := req.path_parameter ("warehouse_id")
+			log_request (a_req)
+			l_wh_id := a_req.path_parameter ("warehouse_id")
 			if attached l_wh_id as wh_id and then wh_id.is_integer_64 then
 				l_locations := wms.warehouse_locations (wh_id.to_integer_64)
 				create l_array.make
@@ -249,15 +249,15 @@ feature {NONE} -- Handlers: Locations
 
 feature {NONE} -- Handlers: Stock
 
-	handle_get_stock_at_location (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_stock_at_location (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/stock/{location_id} - Get stock at location.
 		local
 			l_loc_id: detachable STRING_32
 			l_array: SIMPLE_JSON_ARRAY
 			l_stock_list: ARRAYED_LIST [WMS_STOCK]
 		do
-			log_request (req)
-			l_loc_id := req.path_parameter ("location_id")
+			log_request (a_req)
+			l_loc_id := a_req.path_parameter ("location_id")
 			if attached l_loc_id as loc_id and then loc_id.is_integer_64 then
 				l_stock_list := wms.stock_at_location (loc_id.to_integer_64)
 				create l_array.make
@@ -270,15 +270,15 @@ feature {NONE} -- Handlers: Stock
 			end
 		end
 
-	handle_get_stock_for_product (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_stock_for_product (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/stock/product/{product_id} - Get total and available stock.
 		local
 			l_prod_id: detachable STRING_32
 			l_json: SIMPLE_JSON_OBJECT
 			l_total, l_available: INTEGER
 		do
-			log_request (req)
-			l_prod_id := req.path_parameter ("product_id")
+			log_request (a_req)
+			l_prod_id := a_req.path_parameter ("product_id")
 			if attached l_prod_id as prod_id and then prod_id.is_integer_64 then
 				l_total := wms.total_stock_for_product (prod_id.to_integer_64)
 				l_available := wms.available_stock_for_product (prod_id.to_integer_64)
@@ -295,7 +295,7 @@ feature {NONE} -- Handlers: Stock
 
 feature {NONE} -- Handlers: Operations
 
-	handle_receive_stock (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_receive_stock (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/receive - Receive stock at location.
 			-- Body: {"product_id": 1, "location_id": 1, "quantity": 100, "reference": "PO-123", "user_id": 1}
 		local
@@ -306,8 +306,8 @@ feature {NONE} -- Handlers: Operations
 			l_success: BOOLEAN
 			l_response: SIMPLE_JSON_OBJECT
 		do
-			log_request (req)
-			l_json := req.body_as_json
+			log_request (a_req)
+			l_json := a_req.body_as_json
 
 			if attached l_json as json then
 				if json.has_key ("product_id") and json.has_key ("location_id") and
@@ -348,7 +348,7 @@ feature {NONE} -- Handlers: Operations
 			end
 		end
 
-	handle_transfer_stock (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_transfer_stock (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/transfer - Transfer stock between locations.
 		local
 			l_json: detachable SIMPLE_JSON_OBJECT
@@ -358,8 +358,8 @@ feature {NONE} -- Handlers: Operations
 			l_success: BOOLEAN
 			l_response: SIMPLE_JSON_OBJECT
 		do
-			log_request (req)
-			l_json := req.body_as_json
+			log_request (a_req)
+			l_json := a_req.body_as_json
 
 			if attached l_json as json then
 				if json.has_key ("product_id") and json.has_key ("from_location_id") and
@@ -405,7 +405,7 @@ feature {NONE} -- Handlers: Operations
 			end
 		end
 
-	handle_reserve_stock (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_reserve_stock (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/reserve - Reserve stock for an order.
 		local
 			l_json: detachable SIMPLE_JSON_OBJECT
@@ -414,8 +414,8 @@ feature {NONE} -- Handlers: Operations
 			l_order_ref: STRING_8
 			l_reservation: detachable WMS_RESERVATION
 		do
-			log_request (req)
-			l_json := req.body_as_json
+			log_request (a_req)
+			l_json := a_req.body_as_json
 
 			if attached l_json as json then
 				if json.has_key ("product_id") and json.has_key ("location_id") and
@@ -455,15 +455,15 @@ feature {NONE} -- Handlers: Operations
 			end
 		end
 
-	handle_release_reservation (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_release_reservation (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- DELETE /api/reserve/{id} - Release a reservation.
 		local
 			l_id: detachable STRING_32
 			l_success: BOOLEAN
 			l_response: SIMPLE_JSON_OBJECT
 		do
-			log_request (req)
-			l_id := req.path_parameter ("id")
+			log_request (a_req)
+			l_id := a_req.path_parameter ("id")
 			if attached l_id as id and then id.is_integer_64 then
 				l_success := wms.release_reservation (id.to_integer_64)
 				if l_success then
@@ -482,7 +482,7 @@ feature {NONE} -- Handlers: Operations
 
 feature {NONE} -- Handlers: Movements
 
-	handle_get_movements (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_movements (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/movements/{product_id}?limit=50 - Get movement history.
 		local
 			l_prod_id: detachable STRING_32
@@ -491,9 +491,9 @@ feature {NONE} -- Handlers: Movements
 			l_movements: ARRAYED_LIST [WMS_MOVEMENT]
 			l_array: SIMPLE_JSON_ARRAY
 		do
-			log_request (req)
-			l_prod_id := req.path_parameter ("product_id")
-			l_limit_param := req.query_parameter ("limit")
+			log_request (a_req)
+			l_prod_id := a_req.path_parameter ("product_id")
+			l_limit_param := a_req.query_parameter ("limit")
 
 			if attached l_limit_param as lp and then lp.is_integer then
 				l_limit := lp.to_integer.min (100).max (1)
@@ -515,14 +515,14 @@ feature {NONE} -- Handlers: Movements
 
 feature {NONE} -- Handlers: Alerts
 
-	handle_get_low_stock (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_get_low_stock (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- GET /api/low-stock - Products below minimum stock level.
 		local
 			l_alerts: ARRAYED_LIST [TUPLE [product: WMS_PRODUCT; total: INTEGER; min: INTEGER]]
 			l_array: SIMPLE_JSON_ARRAY
 			l_item: SIMPLE_JSON_OBJECT
 		do
-			log_request (req)
+			log_request (a_req)
 			l_alerts := wms.products_below_min_stock
 			create l_array.make
 			across l_alerts as alert loop
@@ -538,14 +538,14 @@ feature {NONE} -- Handlers: Alerts
 
 feature {NONE} -- Handlers: Setup
 
-	handle_setup_test_data (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_setup_test_data (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- POST /api/setup - Initialize test data for simulation.
 		local
 			l_wh: WMS_WAREHOUSE
 			l_response: SIMPLE_JSON_OBJECT
 			i: INTEGER
 		do
-			log_request (req)
+			log_request (a_req)
 
 			-- Create warehouse
 			l_wh := wms.create_warehouse ("WH-001", "Main Warehouse")
@@ -690,7 +690,7 @@ feature {NONE} -- JSON Conversion
 
 feature {NONE} -- Helper
 
-	send_error (res: SIMPLE_WEB_SERVER_RESPONSE; a_status: INTEGER; a_message: STRING)
+	send_error (a_res: SIMPLE_WEB_SERVER_RESPONSE; a_status: INTEGER; a_message: STRING)
 			-- Send error response.
 		local
 			l_json: SIMPLE_JSON_OBJECT
@@ -699,14 +699,14 @@ feature {NONE} -- Helper
 			l_json.put_boolean (False, "success").do_nothing
 			l_json.put_string (a_message, "error").do_nothing
 			l_json.put_integer (a_status.to_integer_64, "status").do_nothing
-			res.set_status (a_status)
-			res.send_json_object (l_json)
+			a_res.set_status (a_status)
+			a_res.send_json_object (l_json)
 		end
 
-	log_request (req: SIMPLE_WEB_SERVER_REQUEST)
+	log_request (a_req: SIMPLE_WEB_SERVER_REQUEST)
 			-- Log request for debugging.
 		do
-			print ("[" + req.method + "] " + req.path.to_string_8 + "%N")
+			print ("[" + a_req.method + "] " + a_req.path.to_string_8 + "%N")
 		end
 
 invariant

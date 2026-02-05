@@ -192,15 +192,15 @@ feature {NONE} -- Implementation
 			regex_pattern := l_regex
 		end
 
-	escape_regex (s: STRING): STRING
+	escape_regex (a_s: STRING): STRING
 			-- Escape special regex characters in `s'.
 		local
 			i: INTEGER
 			c: CHARACTER
 		do
-			create Result.make (s.count)
-			from i := 1 until i > s.count loop
-				c := s.item (i)
+			create Result.make (a_s.count)
+			from i := 1 until i > a_s.count loop
+				c := a_s.item (i)
 				inspect c
 				when '.', '*', '+', '?', '^', '$', '[', ']', '(', ')', '{', '}', '|', '\' then
 					Result.append_character ('\')
@@ -211,7 +211,7 @@ feature {NONE} -- Implementation
 				i := i + 1
 			end
 		ensure
-			result_at_least_as_long: Result.count >= s.count
+			result_at_least_as_long: Result.count >= a_s.count
 		end
 
 invariant

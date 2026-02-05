@@ -202,7 +202,7 @@ feature {NONE} -- Implementation
 	static_folder: detachable STRING
 			-- Folder for static file serving.
 
-	handle_static_file (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+	handle_static_file (a_req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
 			-- Handle request for static file.
 		local
 			l_path, l_full_path: STRING
@@ -210,7 +210,7 @@ feature {NONE} -- Implementation
 			l_content: STRING
 			l_ext: STRING
 		do
-			l_path := req.path
+			l_path := a_req.path
 			if l_path.same_string ("/") then
 				l_path := "/index.html"
 			end

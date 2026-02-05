@@ -442,13 +442,13 @@ feature {NONE} -- Implementation
 			Result := l_high * 16 + l_low
 		end
 
-	hex_digit_value (c: CHARACTER): INTEGER
+	hex_digit_value (a_c: CHARACTER): INTEGER
 			-- Value of hex digit character.
 		do
-			inspect c
-			when '0'..'9' then Result := c.code - ('0').code
-			when 'a'..'f' then Result := c.code - ('a').code + 10
-			when 'A'..'F' then Result := c.code - ('A').code + 10
+			inspect a_c
+			when '0'..'9' then Result := a_c.code - ('0').code
+			when 'a'..'f' then Result := a_c.code - ('a').code + 10
+			when 'A'..'F' then Result := a_c.code - ('A').code + 10
 			else Result := 0
 			end
 		end

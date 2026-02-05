@@ -1,5 +1,5 @@
 note
-	description: "Client for Ollama AI API (localhost:11434)"
+	description: "Client for Ollama AI API (a_localhost:11434)"
 	date: "$Date$"
 	revision: "$Revision$"
 
