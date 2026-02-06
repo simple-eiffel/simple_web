@@ -73,7 +73,7 @@ feature -- Access
 			-- HTTP method (GET, POST, PUT, DELETE, etc.).
 		do
 			if is_mock and attached mock_method as al_l_method then
-				Result := l_method
+				Result := al_l_method
 			elseif attached wsf_request as al_l_request then
 				Result := al_l_request.request_method
 			else
@@ -87,7 +87,7 @@ feature -- Access
 			-- Request path (e.g., "/api/users/123").
 		do
 			if is_mock and attached mock_path as al_l_path then
-				Result := l_path
+				Result := al_l_path
 			elseif attached wsf_request as al_l_request then
 				Result := al_l_request.path_info
 			else
@@ -111,7 +111,7 @@ feature -- Query Parameters
 			name_attached: a_name /= Void
 		do
 			if not is_mock and attached wsf_request as al_l_request then
-				if attached l_request.query_parameter (a_name) as al_l_param then
+				if attached al_l_request.query_parameter (a_name) as al_l_param then
 					Result := al_l_param.string_representation.to_string_32
 				end
 			end
@@ -127,7 +127,7 @@ feature -- Query Parameters
 			positive_length: a_max_length > 0
 		do
 			if attached query_parameter (a_name) as al_l_raw then
-				Result := sanitizer.sanitize_user_input (l_raw, a_max_length)
+				Result := sanitizer.sanitize_user_input (al_l_raw, a_max_length)
 			end
 		ensure
 			length_limited: attached Result implies Result.count <= a_max_length + 20
@@ -139,7 +139,7 @@ feature -- Query Parameters
 			name_attached: a_name /= Void
 		do
 			if not is_mock and attached wsf_request as al_l_request then
-				Result := l_request.query_parameter (a_name) /= Void
+				Result := al_l_request.query_parameter (a_name) /= Void
 			end
 		end
 
@@ -163,7 +163,7 @@ feature -- Path Parameters
 			name_attached: a_name /= Void
 		do
 			if attached path_parameter (a_name) as al_l_raw then
-				Result := sanitizer.sanitize_path_parameter (l_raw)
+				Result := sanitizer.sanitize_path_parameter (al_l_raw)
 			end
 		ensure
 			sanitized: attached Result implies sanitizer.is_safe_path_parameter (Result)
@@ -229,15 +229,15 @@ feature -- Body
 			l_length: INTEGER
 		do
 			if attached cached_body as al_l_cached then
-				Result := l_cached
+				Result := al_l_cached
 			elseif is_mock then
 				Result := mock_body
 				cached_body := Result
 			elseif attached wsf_request as al_l_request then
 				l_length := content_length.to_integer_32.max (0)
-				if l_length > 0 and then not l_request.input.end_of_input then
-					l_request.input.read_string (l_length)
-					Result := l_request.input.last_string
+				if l_length > 0 and then not al_l_request.input.end_of_input then
+					al_l_request.input.read_string (l_length)
+					Result := al_l_request.input.last_string
 				else
 					create Result.make_empty
 				end

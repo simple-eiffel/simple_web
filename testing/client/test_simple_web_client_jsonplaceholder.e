@@ -1,7 +1,7 @@
 note
 	description: "[
 		Integration tests for {SIMPLE_WEB_CLIENT} using JSONPlaceholder API.
-		Tests RESTful CRUD operations, array responses, and nested resources.
+		Tests RESTful CRUD operations, l_array responses, and nested resources.
 		JSONPlaceholder provides free fake REST API: https://jsonplaceholder.typicode.com
 	]"
 	testing: "covers"

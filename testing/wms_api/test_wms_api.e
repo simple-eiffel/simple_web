@@ -5,7 +5,7 @@ note
 		These tests validate:
 		- Server endpoint functionality
 		- Worker simulator operations
-		- Integration between simple_web client/server
+		- Integration between simple_web client/l_server
 	]"
 	author: "Larry Rix"
 	date: "$Date$"

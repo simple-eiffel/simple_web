@@ -23,7 +23,7 @@ note
 		     Current: if not l_json.has ("product_id") then error end
 		     Desired: Declarative validation schema
 
-		[F5] LOGGING - No built-in request/response logging
+		[F5] LOGGING - No built-in request/l_response logging
 		     Current: Manual print statements
 		     Desired: Middleware logging with timestamps
 
@@ -32,17 +32,17 @@ note
 		     Desired: Middleware that validates tokens before handlers
 
 		Endpoints:
-			GET  /api/warehouses           - List all warehouses
+			GET  /api/l_warehouses           - List all l_warehouses
 			GET  /api/products             - List all products
-			GET  /api/products/{sku}       - Get product by SKU
-			GET  /api/locations/{wh_id}    - Locations in warehouse
-			GET  /api/stock/{loc_id}       - Stock at location
-			GET  /api/stock/product/{id}   - Total stock for product
+			GET  /api/products/{l_sku}       - Get product by SKU
+			GET  /api/l_locations/{l_wh_id}    - Locations in warehouse
+			GET  /api/stock/{l_loc_id}       - Stock at location
+			GET  /api/stock/product/{l_id}   - Total stock for product
 			POST /api/receive              - Receive stock
-			POST /api/transfer             - Transfer stock between locations
+			POST /api/transfer             - Transfer stock between l_locations
 			POST /api/reserve              - Reserve stock for order
-			DELETE /api/reserve/{id}       - Release reservation
-			GET  /api/movements/{prod_id}  - Movement history
+			DELETE /api/reserve/{l_id}       - Release l_reservation
+			GET  /api/l_movements/{l_prod_id}  - Movement history
 			GET  /api/low-stock            - Products below minimum
 			POST /api/setup                - Initialize test data
 	]"
@@ -183,8 +183,8 @@ feature {NONE} -- Handlers: Warehouses
 			log_request (a_req)
 			l_warehouses := wms.all_warehouses
 			create l_array.make
-			across l_warehouses as wh loop
-				l_array.add_object (warehouse_to_json (wh)).do_nothing
+			across l_warehouses as l_wh loop
+				l_array.add_object (warehouse_to_json (l_wh)).do_nothing
 			end
 			res.send_json_array (l_array)
 		end
@@ -235,8 +235,8 @@ feature {NONE} -- Handlers: Locations
 		do
 			log_request (a_req)
 			l_wh_id := a_req.path_parameter ("warehouse_id")
-			if attached l_wh_id as wh_id and then wh_id.is_integer_64 then
-				l_locations := wms.warehouse_locations (wh_id.to_integer_64)
+			if attached l_wh_id as l_wh_id and then l_wh_id.is_integer_64 then
+				l_locations := wms.warehouse_locations (l_wh_id.to_integer_64)
 				create l_array.make
 				across l_locations as loc loop
 					l_array.add_object (location_to_json (loc)).do_nothing
@@ -258,8 +258,8 @@ feature {NONE} -- Handlers: Stock
 		do
 			log_request (a_req)
 			l_loc_id := a_req.path_parameter ("location_id")
-			if attached l_loc_id as loc_id and then loc_id.is_integer_64 then
-				l_stock_list := wms.stock_at_location (loc_id.to_integer_64)
+			if attached l_loc_id as l_loc_id and then l_loc_id.is_integer_64 then
+				l_stock_list := wms.stock_at_location (l_loc_id.to_integer_64)
 				create l_array.make
 				across l_stock_list as s loop
 					l_array.add_object (stock_to_json (s)).do_nothing
@@ -279,11 +279,11 @@ feature {NONE} -- Handlers: Stock
 		do
 			log_request (a_req)
 			l_prod_id := a_req.path_parameter ("product_id")
-			if attached l_prod_id as prod_id and then prod_id.is_integer_64 then
-				l_total := wms.total_stock_for_product (prod_id.to_integer_64)
-				l_available := wms.available_stock_for_product (prod_id.to_integer_64)
+			if attached l_prod_id as l_prod_id and then l_prod_id.is_integer_64 then
+				l_total := wms.total_stock_for_product (l_prod_id.to_integer_64)
+				l_available := wms.available_stock_for_product (l_prod_id.to_integer_64)
 				create l_json.make
-				l_json.put_integer (prod_id.to_integer_64, "product_id").do_nothing
+				l_json.put_integer (l_prod_id.to_integer_64, "product_id").do_nothing
 				l_json.put_integer (l_total.to_integer_64, "total_quantity").do_nothing
 				l_json.put_integer (l_available.to_integer_64, "available_quantity").do_nothing
 				l_json.put_integer ((l_total - l_available).to_integer_64, "reserved_quantity").do_nothing
@@ -428,10 +428,10 @@ feature {NONE} -- Handlers: Operations
 					else
 						l_order_ref := ""
 					end
-					l_user_id := json.integer_item ("user_id")
+					l_user_id := l_json.integer_item ("user_id")
 
-					if json.has_key ("expires_minutes") then
-						l_expires := json.integer_item ("expires_minutes").to_integer_32
+					if l_json.has_key ("expires_minutes") then
+						l_expires := l_json.integer_item ("expires_minutes").to_integer_32
 					else
 						l_expires := 30
 					end
@@ -464,13 +464,13 @@ feature {NONE} -- Handlers: Operations
 		do
 			log_request (a_req)
 			l_id := a_req.path_parameter ("id")
-			if attached l_id as id and then id.is_integer_64 then
-				l_success := wms.release_reservation (id.to_integer_64)
+			if attached l_id as l_id and then l_id.is_integer_64 then
+				l_success := wms.release_reservation (l_id.to_integer_64)
 				if l_success then
 					create l_response.make
 					l_response.put_boolean (True, "success").do_nothing
 					l_response.put_string ("Reservation released", "message").do_nothing
-					l_response.put_integer (id.to_integer_64, "reservation_id").do_nothing
+					l_response.put_integer (l_id.to_integer_64, "reservation_id").do_nothing
 					res.send_json_object (l_response)
 				else
 					send_error (res, 404, "Reservation not found")
@@ -501,8 +501,8 @@ feature {NONE} -- Handlers: Movements
 				l_limit := 50
 			end
 
-			if attached l_prod_id as prod_id and then prod_id.is_integer_64 then
-				l_movements := wms.movements_for_product (prod_id.to_integer_64, l_limit)
+			if attached l_prod_id as l_prod_id and then l_prod_id.is_integer_64 then
+				l_movements := wms.movements_for_product (l_prod_id.to_integer_64, l_limit)
 				create l_array.make
 				across l_movements as m loop
 					l_array.add_object (movement_to_json (m)).do_nothing

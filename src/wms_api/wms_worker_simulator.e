@@ -23,9 +23,9 @@ note
 		     Current: "{%"product_id%":" + id.out + ",...}"
 		     Desired: Fluent JSON builder or automatic serialization
 
-		[C3] ERROR HANDLING - No structured way to check response errors
-		     Current: if response.status_code >= 400 then...
-		     Desired: response.is_error, response.error_message
+		[C3] ERROR HANDLING - No structured way to check l_response errors
+		     Current: if l_response.status_code >= 400 then...
+		     Desired: l_response.is_error, l_response.error_message
 
 		[C4] NO RETRY LOGIC - Network failures require manual retry
 		     Current: Must wrap every call in retry loop
@@ -33,7 +33,7 @@ note
 
 		[C5] NO REQUEST LOGGING - Hard to debug what was sent
 		     Current: Manual print before each request
-		     Desired: Built-in request/response logging
+		     Desired: Built-in request/l_response logging
 	]"
 	author: "Larry Rix"
 	date: "$Date$"
@@ -455,7 +455,7 @@ feature -- Operations
 			end
 		end
 
-	receive_shipment (a_po: STRING; a_items: ARRAY [TUPLE [product_id: INTEGER; location_id: INTEGER; quantity: INTEGER]])
+	receive_shipment (a_po: STRING; a_items: ARRAY [TUPLE [product_id: INTEGER; l_location_id: INTEGER; quantity: INTEGER]])
 			-- Receive multiple items from a purchase order.
 		local
 			l_body: STRING
@@ -1182,7 +1182,7 @@ feature -- Walmart-Style Simulation
 			l_picks := randomizer.random_integer_in_range (8 |..| 15)
 			log_action ("Pick wave #" + a_wave_num.out + " - " + l_picks.out + " locations")
 
-			from i := 1 until i > l_picks.min (5) loop -- Execute 5 picks
+			from i := 1 until i > l_picks.min (5) loop -- Execute 5 l_picks
 				pick_order (random_order_reference, <<[random_product_id, random_quantity (4, 24)]>>)
 				i := i + 1
 			end

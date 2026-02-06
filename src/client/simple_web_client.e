@@ -120,7 +120,7 @@ feature -- Advanced Operations
 			-- Add headers to context
 			across a_request.headers.current_keys as ic loop
 				if attached a_request.headers.item (ic) as al_l_value then
-					l_ctx.headers.force (l_value, ic.out)
+					l_ctx.headers.force (al_l_value, ic.out)
 				end
 			end
 

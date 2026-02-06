@@ -1,8 +1,8 @@
 note
 	description: "[
 		Echo and diagnostic tests for {SIMPLE_WEB_CLIENT}.
-		Uses echo services to verify exact request transmission.
-		Tests internal request building and header handling.
+		Uses echo services to verify exact l_request transmission.
+		Tests internal l_request building and header handling.
 	]"
 	testing: "covers"
 

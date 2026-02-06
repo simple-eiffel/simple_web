@@ -317,7 +317,7 @@ feature -- Execution
 
 			-- 1. Bulkhead check
 			if l_proceed and then attached bulkhead as al_bh then
-				l_acquired := bh.acquire
+				l_acquired := al_bh.acquire
 				if not l_acquired then
 					last_error_message := "Bulkhead full - request rejected"
 					handle_failure
@@ -330,7 +330,7 @@ feature -- Execution
 
 			-- 2. Circuit breaker check
 			if l_proceed and then attached circuit_breaker as al_cb then
-				if not cb.allow_request then
+				if not al_cb.allow_request then
 					last_error_message := "Circuit breaker open - request blocked"
 					release_bulkhead
 					if has_fallback then
@@ -363,7 +363,7 @@ feature -- Execution
 
 			-- 1. Bulkhead check
 			if l_proceed and then attached bulkhead as al_bh then
-				l_acquired := bh.acquire
+				l_acquired := al_bh.acquire
 				if not l_acquired then
 					last_error_message := "Bulkhead full - request rejected"
 					handle_failure
@@ -376,7 +376,7 @@ feature -- Execution
 
 			-- 2. Circuit breaker check
 			if l_proceed and then attached circuit_breaker as al_cb then
-				if not cb.allow_request then
+				if not al_cb.allow_request then
 					last_error_message := "Circuit breaker open - request blocked"
 					release_bulkhead
 					if has_fallback then

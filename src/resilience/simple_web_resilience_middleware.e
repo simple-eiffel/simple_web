@@ -3,7 +3,7 @@ note
 		Resilience middleware for simple_web server pipeline.
 
 		Wraps downstream handlers with resilience patterns:
-		- Circuit breaker for downstream service protection
+		- Circuit l_breaker for downstream service protection
 		- Bulkhead for concurrency limiting
 		- Rate limiting integration
 
@@ -43,7 +43,7 @@ feature {NONE} -- Initialization
 		do
 			create endpoint_breakers.make (10)
 		ensure
-			no_policy: policy = Void
+			no_policy: l_policy = Void
 			no_breakers: endpoint_breakers.is_empty
 		end
 
@@ -52,10 +52,10 @@ feature {NONE} -- Initialization
 		require
 			policy_not_void: a_policy /= Void
 		do
-			policy := a_policy
+			l_policy := a_policy
 			create endpoint_breakers.make (10)
 		ensure
-			policy_set: policy = a_policy
+			policy_set: l_policy = a_policy
 		end
 
 	make_with_circuit_breaker (a_failure_threshold: INTEGER; a_cooldown_seconds: INTEGER)
@@ -69,10 +69,10 @@ feature {NONE} -- Initialization
 		do
 			create l_policy.make
 			l_dummy := l_policy.with_circuit_breaker (a_failure_threshold, a_cooldown_seconds)
-			policy := l_policy
+			l_policy := l_policy
 			create endpoint_breakers.make (10)
 		ensure
-			policy_set: policy /= Void
+			policy_set: l_policy /= Void
 		end
 
 	make_with_bulkhead (a_max_concurrent: INTEGER)
@@ -85,24 +85,24 @@ feature {NONE} -- Initialization
 		do
 			create l_policy.make
 			l_dummy := l_policy.with_bulkhead (a_max_concurrent)
-			policy := l_policy
+			l_policy := l_policy
 			create endpoint_breakers.make (10)
 		ensure
-			policy_set: policy /= Void
+			policy_set: l_policy /= Void
 		end
 
 feature -- Access
 
-	policy: detachable SIMPLE_RESILIENCE_POLICY
+	l_policy: detachable SIMPLE_RESILIENCE_POLICY
 			-- Main resilience policy
 
 	endpoint_breakers: HASH_TABLE [SIMPLE_CIRCUIT_BREAKER, STRING]
 			-- Circuit breakers per endpoint pattern
 
-	on_circuit_open: detachable PROCEDURE [TUPLE [path: STRING; breaker: SIMPLE_CIRCUIT_BREAKER]]
+	on_circuit_open: detachable PROCEDURE [TUPLE [l_path: STRING; l_breaker: SIMPLE_CIRCUIT_BREAKER]]
 			-- Callback when circuit opens
 
-	on_bulkhead_reject: detachable PROCEDURE [TUPLE [path: STRING]]
+	on_bulkhead_reject: detachable PROCEDURE [TUPLE [l_path: STRING]]
 			-- Callback when bulkhead rejects
 
 feature -- Configuration
@@ -122,7 +122,7 @@ feature -- Configuration
 			breaker_added: endpoint_breakers.has (a_path_pattern)
 		end
 
-	set_on_circuit_open (a_handler: PROCEDURE [TUPLE [path: STRING; breaker: SIMPLE_CIRCUIT_BREAKER]])
+	set_on_circuit_open (a_handler: PROCEDURE [TUPLE [l_path: STRING; l_breaker: SIMPLE_CIRCUIT_BREAKER]])
 			-- Set callback for when circuit opens.
 		do
 			on_circuit_open := a_handler
@@ -130,7 +130,7 @@ feature -- Configuration
 			handler_set: on_circuit_open = a_handler
 		end
 
-	set_on_bulkhead_reject (a_handler: PROCEDURE [TUPLE [path: STRING]])
+	set_on_bulkhead_reject (a_handler: PROCEDURE [TUPLE [l_path: STRING]])
 			-- Set callback for bulkhead rejection.
 		do
 			on_bulkhead_reject := a_handler
@@ -163,7 +163,7 @@ feature -- Processing
 			end
 
 			-- 2. Check main policy circuit breaker
-			if l_proceed and then attached policy as al_p then
+			if l_proceed and then attached l_policy as al_p then
 				if p.has_circuit_breaker and then p.is_circuit_open then
 					respond_circuit_open (a_response, l_path)
 					l_proceed := False
@@ -186,7 +186,7 @@ feature -- Processing
 			end
 
 			-- 5. Release bulkhead
-			if attached policy as p and then attached p.bulkhead as al_bh then
+			if attached l_policy as p and then attached p.bulkhead as al_bh then
 				al_bh.release_if_held
 			end
 		end
@@ -244,7 +244,7 @@ feature {NONE} -- Implementation
 			if attached a_breaker as al_cb then
 				al_cb.record_success
 			end
-			if attached policy as p and then attached p.circuit_breaker as al_pcb then
+			if attached l_policy as p and then attached p.circuit_breaker as al_pcb then
 				al_pcb.record_success
 			end
 		end
@@ -255,7 +255,7 @@ feature {NONE} -- Implementation
 			if attached a_breaker as al_cb then
 				al_cb.record_failure
 			end
-			if attached policy as p and then attached p.circuit_breaker as al_pcb then
+			if attached l_policy as p and then attached p.circuit_breaker as al_pcb then
 				al_pcb.record_failure
 			end
 		end

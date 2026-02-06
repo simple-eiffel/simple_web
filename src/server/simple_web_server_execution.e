@@ -63,8 +63,8 @@ feature {NONE} -- Route Dispatch
 				until
 					i > l_keys.upper
 				loop
-					if attached l_params.item (l_keys [i]) as al_l_value then
-						a_request.set_path_parameter (l_keys [i], l_value)
+					if attached l_params.item (l_keys [i]) as al_value then
+						a_request.set_path_parameter (l_keys [i], al_value)
 					end
 					i := i + 1
 				end

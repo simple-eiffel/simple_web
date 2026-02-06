@@ -143,7 +143,7 @@ feature {NONE} -- Implementation
 			path_attached: a_path /= Void
 		do
 			if attached excluded_paths as al_l_excluded then
-				Result := across l_excluded as ic some ic ~ a_path end
+				Result := across al_l_excluded as ic some ic ~ a_path end
 			end
 		end
 

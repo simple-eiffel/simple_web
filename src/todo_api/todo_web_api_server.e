@@ -1,5 +1,5 @@
 note
-	description: "[
+	l_description: "[
 		Todo List REST API Server - Exposes TODO_APP operations via HTTP.
 
 		This mock application exercises the SIMPLE_WEB server capabilities by
@@ -16,16 +16,16 @@ note
 		     Entities implement apply_json (a_json) deferred feature
 
 		[F3] FIELD VALIDATION BOILERPLATE - RESOLVED
-		     Solution: json.has_all_keys (<<"title", "priority">>)
-		     Also: json.has_any_key, json.missing_keys for detailed errors
+		     Solution: l_json.has_all_keys (<<"title", "priority">>)
+		     Also: l_json.has_any_key, l_json.missing_keys for detailed errors
 
 		[F4] TYPE COERCION FROM JSON - RESOLVED
-		     Solution: json.integer_32_item ("priority") - no more .to_integer_32
-		     Also: json.natural_32_item for unsigned values
+		     Solution: l_json.integer_32_item ("priority") - no more .to_integer_32
+		     Also: l_json.natural_32_item for unsigned values
 
 		[F5] OPTIONAL FIELD HANDLING - RESOLVED
-		     Solution: json.optional_string ("description") returns detachable
-		     Also: json.optional_integer, json.optional_boolean with defaults
+		     Solution: l_json.optional_string ("description") returns detachable
+		     Also: l_json.optional_integer, l_json.optional_boolean with defaults
 
 		[F6] UPDATE PARTIAL FIELDS - Pattern documented
 		     Use SIMPLE_JSON_SERIALIZABLE.apply_json for full updates
@@ -42,15 +42,15 @@ note
 		     Impact: Different setup for dev/test/prod
 
 		Endpoints:
-			GET    /api/todos           - List all todos (with filters)
-			GET    /api/todos/{id}      - Get todo by ID
-			POST   /api/todos           - Create new todo
-			PUT    /api/todos/{id}      - Update todo
-			PATCH  /api/todos/{id}      - Partial update
-			DELETE /api/todos/{id}      - Delete todo
-			POST   /api/todos/{id}/complete   - Mark as completed
-			POST   /api/todos/{id}/incomplete - Mark as incomplete
-			DELETE /api/todos/completed       - Clear completed todos
+			GET    /api/l_todos           - List all l_todos (with filters)
+			GET    /api/l_todos/{id}      - Get l_todo by ID
+			POST   /api/l_todos           - Create new l_todo
+			PUT    /api/l_todos/{id}      - Update l_todo
+			PATCH  /api/l_todos/{id}      - Partial update
+			DELETE /api/l_todos/{id}      - Delete l_todo
+			POST   /api/l_todos/{id}/complete   - Mark as completed
+			POST   /api/l_todos/{id}/incomplete - Mark as incomplete
+			DELETE /api/l_todos/completed       - Clear completed l_todos
 			GET    /api/stats                 - Statistics
 	]"
 	author: "Claude Code"
@@ -267,13 +267,13 @@ feature {NONE} -- Handlers: CRUD
 					end
 
 					-- [F4] FRICTIONLESS: Direct INTEGER_32 extraction
-					l_priority := json.integer_32_item ("priority")
+					l_priority := l_json.integer_32_item ("priority")
 
 					-- [F5] FRICTIONLESS: Optional fields with single call
-					if attached json.optional_string ("description") as al_d then
+					if attached l_json.optional_string ("description") as al_d then
 						l_description := al_d.to_string_8
 					end
-					if attached json.optional_string ("due_date") as al_dd then
+					if attached l_json.optional_string ("due_date") as al_dd then
 						l_due_date := al_dd.to_string_8
 					end
 
@@ -314,11 +314,11 @@ feature {NONE} -- Handlers: CRUD
 				if not attached l_todo then
 					send_error (res, 404, "Todo not found")
 				-- [F3] FRICTIONLESS: Single call checks all required fields
-				elseif not json.has_all_keys (<<"title", "priority">>) then
+				elseif not l_json.has_all_keys (<<"title", "priority">>) then
 					send_error (res, 400, "Missing required fields: title, priority")
 				else
 					-- Apply JSON to entity
-					apply_json_to_todo (l_todo, json)
+					apply_json_to_todo (l_todo, l_json)
 
 					-- Validate
 					if l_todo.title.is_empty then
@@ -358,7 +358,7 @@ feature {NONE} -- Handlers: CRUD
 					send_error (res, 404, "Todo not found")
 				else
 					-- Apply only provided fields
-					apply_json_patch_to_todo (l_todo, json)
+					apply_json_patch_to_todo (l_todo, l_json)
 
 					-- Validate after patch
 					if l_todo.title.is_empty then

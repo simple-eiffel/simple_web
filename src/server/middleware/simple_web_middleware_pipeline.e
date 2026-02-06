@@ -1,6 +1,6 @@
 note
 	description: "[
-		Middleware pipeline that chains middleware execution.
+		Middleware pipeline that chains l_middleware execution.
 
 		Middleware runs in registration order for pre-processing,
 		and reverse order for post-processing (like a stack).
