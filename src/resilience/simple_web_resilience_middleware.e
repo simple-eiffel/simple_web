@@ -64,12 +64,12 @@ feature {NONE} -- Initialization
 			positive_threshold: a_failure_threshold > 0
 			positive_cooldown: a_cooldown_seconds > 0
 		local
-			l_policy: SIMPLE_RESILIENCE_POLICY
+			l_new_policy: SIMPLE_RESILIENCE_POLICY
 			l_dummy: SIMPLE_RESILIENCE_POLICY
 		do
-			create l_policy.make
-			l_dummy := l_policy.with_circuit_breaker (a_failure_threshold, a_cooldown_seconds)
-			l_policy := l_policy
+			create l_new_policy.make
+			l_dummy := l_new_policy.with_circuit_breaker (a_failure_threshold, a_cooldown_seconds)
+			l_policy := l_new_policy
 			create endpoint_breakers.make (10)
 		ensure
 			policy_set: l_policy /= Void
@@ -80,12 +80,12 @@ feature {NONE} -- Initialization
 		require
 			positive_limit: a_max_concurrent > 0
 		local
-			l_policy: SIMPLE_RESILIENCE_POLICY
+			l_new_policy: SIMPLE_RESILIENCE_POLICY
 			l_dummy: SIMPLE_RESILIENCE_POLICY
 		do
-			create l_policy.make
-			l_dummy := l_policy.with_bulkhead (a_max_concurrent)
-			l_policy := l_policy
+			create l_new_policy.make
+			l_dummy := l_new_policy.with_bulkhead (a_max_concurrent)
+			l_policy := l_new_policy
 			create endpoint_breakers.make (10)
 		ensure
 			policy_set: l_policy /= Void
@@ -154,24 +154,24 @@ feature -- Processing
 			-- 1. Check endpoint-specific circuit breaker
 			l_breaker := breaker_for_path (l_path)
 			if l_proceed and then attached l_breaker as al_cb then
-				if not cb.allow_request then
+				if not al_cb.allow_request then
 					-- Circuit is open - reject immediately
 					respond_circuit_open (a_response, l_path)
-					notify_circuit_open (l_path, cb)
+					notify_circuit_open (l_path, al_cb)
 					l_proceed := False
 				end
 			end
 
 			-- 2. Check main policy circuit breaker
 			if l_proceed and then attached l_policy as al_p then
-				if p.has_circuit_breaker and then p.is_circuit_open then
+				if al_p.has_circuit_breaker and then al_p.is_circuit_open then
 					respond_circuit_open (a_response, l_path)
 					l_proceed := False
 				end
 
 				-- 3. Check bulkhead
-				if l_proceed and then attached p.bulkhead as al_bh then
-					l_bulkhead_acquired := bh.acquire
+				if l_proceed and then attached al_p.bulkhead as al_bh then
+					l_bulkhead_acquired := al_bh.acquire
 					if not l_bulkhead_acquired then
 						respond_bulkhead_full (a_response, l_path)
 						notify_bulkhead_reject (l_path)
@@ -186,7 +186,7 @@ feature -- Processing
 			end
 
 			-- 5. Release bulkhead
-			if attached l_policy as p and then attached p.bulkhead as al_bh then
+			if attached l_policy as al_p2 and then attached al_p2.bulkhead as al_bh then
 				al_bh.release_if_held
 			end
 		end
@@ -244,7 +244,7 @@ feature {NONE} -- Implementation
 			if attached a_breaker as al_cb then
 				al_cb.record_success
 			end
-			if attached l_policy as p and then attached p.circuit_breaker as al_pcb then
+			if attached l_policy as al_p and then attached al_p.circuit_breaker as al_pcb then
 				al_pcb.record_success
 			end
 		end
@@ -255,7 +255,7 @@ feature {NONE} -- Implementation
 			if attached a_breaker as al_cb then
 				al_cb.record_failure
 			end
-			if attached l_policy as p and then attached p.circuit_breaker as al_pcb then
+			if attached l_policy as al_p and then attached al_p.circuit_breaker as al_pcb then
 				al_pcb.record_failure
 			end
 		end

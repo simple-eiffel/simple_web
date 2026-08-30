@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Compile fixes: object-test local names in the resilience middleware and static-file serving (`al_cb`, `al_p`, `al_bh`, `al_folder` were referenced by their un-prefixed names), a self-assignment in the middleware constructors that left the policy void, and `SIMPLE_WEB_SERVER_REQUEST.request_method` converting the WSF value with `to_string_8` (silences the obsolete `as_string_8` warning for every consumer)
+
 ### Changed
 - Testing config updates, AutoTest fixes, .gitignore cleanup
 - Add SCOOP concurrency capability

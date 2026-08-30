@@ -75,7 +75,7 @@ feature -- Access
 			if is_mock and attached mock_method as al_l_method then
 				Result := al_l_method
 			elseif attached wsf_request as al_l_request then
-				Result := al_l_request.request_method
+				Result := al_l_request.request_method.to_string_8
 			else
 				create Result.make_empty
 			end

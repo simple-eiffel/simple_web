@@ -216,7 +216,7 @@ feature {NONE} -- Implementation
 			end
 
 			if attached static_folder as al_folder then
-				l_full_path := folder + l_path.twin
+				l_full_path := al_folder + l_path.twin
 				l_full_path.replace_substring_all ("/", "\")
 
 				create l_file.make_with_name (l_full_path)
