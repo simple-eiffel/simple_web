@@ -13,6 +13,8 @@ class
 inherit
 	WSF_EXECUTION
 
+	SIMPLE_WEB_DISPATCHER
+
 create
 	make
 

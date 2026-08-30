@@ -351,7 +351,7 @@ feature -- Status
 			definition: Result = method.is_case_insensitive_equal ("PATCH")
 		end
 
-feature {SIMPLE_WEB_SERVER_EXECUTION} -- Internal
+feature {SIMPLE_WEB_DISPATCHER} -- Internal
 
 	set_path_parameter (a_name, a_value: STRING_32)
 			-- Set path parameter.

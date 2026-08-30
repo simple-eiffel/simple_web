@@ -16,6 +16,8 @@ Part of the [Simple Eiffel](https://github.com/simple-eiffel) ecosystem.
 
 ## Status
 
+**SCOOP-clean since 0.2.0** - `SIMPLE_WEB_HANDLER_SERVER [H]` serves under SCOOP (proof target `simple_web_scoop_tests`) and under threads.
+
 **Production** - HTTP client and server both working
 
 ## Overview
@@ -96,6 +98,47 @@ do
     end
 end
 ```
+
+## SCOOP mode (and the handler-class server)
+
+`SIMPLE_WEB_SERVER` registers handler *agents*; under SCOOP those agents live on the root
+processor, which a request processor can never call while the root is running the program.
+So SCOOP builds get a different server, and it works under threads too:
+
+```eiffel
+class HELLO_HANDLER
+inherit SIMPLE_WEB_REQUEST_HANDLER
+create make
+feature {NONE}
+    setup_routes
+        do
+            routes.on_get ("/", agent hello)          -- agents on Current: same processor as the request
+        end
+    hello (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+        do
+            res.send_text ("hi")
+        end
+end
+
+-- the application
+create server.make (8080)              -- SIMPLE_WEB_HANDLER_SERVER [HELLO_HANDLER]
+server.set_max_concurrent_connections (32)
+server.start                           -- blocking on the caller's processor
+```
+
+One `HELLO_HANDLER` is created per request on the request's processor; `setup_routes` builds
+that request's `SIMPLE_WEB_ROUTES` (same `on_get` / `on_post` / `use` API, plus `dispatch`).
+Process-wide strings the root wants handlers to see go through `SIMPLE_WEB_SHARED`
+(`shared_put` before `start`, `shared_item` inside a handler); anything richer is an
+application `once ("PROCESS")` function of *separate* type, which is what SCOOP requires of
+process-wide onces. In a SCOOP program create the server `separate` and call `start` through a
+separate command so the root keeps going (see `testing/scoop/scoop_test_app.e`, the proof:
+a real socket, a shared value reaching a handler, a 404, and two 2-second requests served
+concurrently).
+
+`SIMPLE_WEB_SERVER` and `SIMPLE_WEB_QUICK` remain for thread-mode programs and are excluded from
+SCOOP builds by the ECF (`src/server/thread`). Build the proof with
+`ec.sh test -config simple_web.ecf -target simple_web_scoop_tests`.
 
 ## Features
 

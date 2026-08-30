@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- SCOOP mode. `SIMPLE_WEB_HANDLER_SERVER [H]` + `SIMPLE_WEB_REQUEST_HANDLER` + `SIMPLE_WEB_ROUTES`: the application supplies a handler *class*, instantiated per request on the request's processor, so no agent ever crosses a processor. `SIMPLE_WEB_SHARED` / `SIMPLE_WEB_SETTINGS`: process-wide strings through a `once ("PROCESS")` of separate type. Proof target `simple_web_scoop_tests` (`use="scoop"`): a real socket client, a shared value reaching a handler, a 404, two 2-second requests served concurrently by EWF's SCOOP connector pool.
+
+### Changed
+- `SIMPLE_WEB_SERVER`, `SIMPLE_WEB_SERVER_EXECUTION`, `SIMPLE_WEB_SERVER_ROUTER` and `SIMPLE_WEB_QUICK` moved to `src/server/thread/`, a cluster compiled only for `concurrency` thread/none: their `once ("PROCESS")` singletons of non-separate type are illegal under SCOOP (VFFD(8)) and their agent registration could not work there anyway. Thread-mode behaviour is unchanged.
+
 ### Fixed
 - Compile fixes: object-test local names in the resilience middleware and static-file serving (`al_cb`, `al_p`, `al_bh`, `al_folder` were referenced by their un-prefixed names), a self-assignment in the middleware constructors that left the policy void, and `SIMPLE_WEB_SERVER_REQUEST.request_method` converting the WSF value with `to_string_8` (silences the obsolete `as_string_8` warning for every consumer)
 

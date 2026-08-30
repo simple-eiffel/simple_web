@@ -160,7 +160,7 @@ feature -- Test routines: HTTP Methods
 			l_response := l_client.get ("https://httpstat.us/200") -- page is not working 2025/11/21
 			print ("body: " + l_response.body)
 			if attached l_response.body_as_json as al_json then
-				print ("body_as_json: " + al_json.representation)
+				print ({STRING_32} "body_as_json: " + al_json.representation)
 			end
 			-- assert_integers_equal ("status_200", 200, l_response.status_code)
 			assert_integers_equal ("status_503_page_not_working", 503, l_response.status_code)
@@ -171,7 +171,7 @@ feature -- Test routines: HTTP Methods
 			l_response := l_client.get ("https://httpstat.us/404") -- page is not working 2025/11/21
 			print ("body: " + l_response.body)
 			if attached l_response.body_as_json as al_json then
-				print ("body_as_json: " + al_json.representation)
+				print ({STRING_32} "body_as_json: " + al_json.representation)
 			end
 			-- assert_integers_equal ("status_404", 404, l_response.status_code)
 			assert_integers_equal ("status_503_page_not_working", 503, l_response.status_code)
