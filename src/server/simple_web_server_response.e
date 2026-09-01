@@ -61,6 +61,11 @@ feature -- Access
 	mock_body: STRING_8
 			-- Body content set in mock mode (for testing verification).
 
+	is_streaming: BOOLEAN
+			-- Has a stream head been sent (`send_stream_head')?
+			-- Chunks may be written while this holds; it drops to False when a
+			-- connector reports a failed write (the client hung up).
+
 feature -- Status Setting
 
 	set_status (a_code: INTEGER)
@@ -268,6 +273,82 @@ feature -- Response Sending
 			send_error (500, a_message)
 		ensure
 			status_set: status_code = 500
+		end
+
+feature -- Streaming
+
+	send_stream_head (a_status: INTEGER; a_content_type: READABLE_STRING_8)
+			-- Begin a streamed response: status `a_status' plus the streaming
+			-- headers (Content-Type `a_content_type', Cache-Control: no-cache,
+			-- Connection: close). No Content-Length is sent - the body is
+			-- delimited by the connection closing when the handler returns.
+			-- After this, write with `send_chunk'; the regular send_* calls no
+			-- longer apply to this response.
+			--
+			-- Wire note: WSF delays the status line and headers until the first
+			-- body byte (EWF's delayed-header response), so the head reaches the
+			-- client together with the first chunk.
+		require
+			valid_status: a_status >= 100 and a_status < 600
+			typed: not a_content_type.is_empty
+			head_once: not is_streaming
+		local
+			l_header: STRING_8
+		do
+			set_status (a_status)
+			if is_mock then
+				mock_headers.force (a_content_type.to_string_8, "Content-Type")
+				mock_headers.force ("no-cache", "Cache-Control")
+				mock_headers.force ("close", "Connection")
+			elseif attached wsf_response as al_l_response then
+				al_l_response.set_status_code (a_status)
+				create l_header.make (96)
+				l_header.append ("Content-Type: ")
+				l_header.append (a_content_type.to_string_8)
+				l_header.append ("%R%NCache-Control: no-cache")
+				l_header.append ("%R%NConnection: close")
+				al_l_response.put_header_text (l_header)
+			end
+			is_streaming := True
+		ensure
+			streaming: is_streaming
+			status_set: status_code = a_status
+			mock_type_recorded: is_mock implies mock_headers.has ("Content-Type")
+			mock_no_cache_recorded: is_mock implies mock_headers.has ("Cache-Control")
+		end
+
+	send_chunk (a_bytes: READABLE_STRING_8)
+			-- Send `a_bytes' now: write, then flush - nothing is buffered on
+			-- this side. If the connector reports a failed write with an
+			-- exception, it is swallowed here and `is_streaming' becomes False:
+			-- the stream is over.
+			--
+			-- Honesty note: EWF's standalone connector does NOT report writes to
+			-- a hung-up client - WGI_STANDALONE_OUTPUT_STREAM writes with
+			-- put_string_8_noexception and keeps the failure in an internal flag
+			-- WSF never exposes - so under it a disconnect is invisible here and
+			-- `is_streaming' stays True. Bound a stream's lifetime in the
+			-- application; do not wait for this query to turn False.
+		require
+			bytes_attached: a_bytes /= Void
+			head_sent: is_streaming
+		local
+			l_failed: BOOLEAN
+		do
+			if l_failed then
+				is_streaming := False
+			elseif is_mock then
+				mock_body.append (a_bytes.to_string_8)
+			elseif attached wsf_response as al_l_response then
+				al_l_response.put_string (a_bytes)
+				al_l_response.flush
+			end
+		ensure
+			mock_recorded: is_mock implies (mock_body.count = old mock_body.count + a_bytes.count and (a_bytes.is_empty or else mock_body.ends_with (a_bytes.to_string_8)))
+			mock_stays_streaming: is_mock implies is_streaming
+		rescue
+			l_failed := True
+			retry
 		end
 
 feature -- Header Setting

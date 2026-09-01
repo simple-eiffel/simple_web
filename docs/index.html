@@ -159,6 +159,22 @@
             <code>shared_item</code> inside handlers). <code>SIMPLE_WEB_SERVER</code> and <code>SIMPLE_WEB_QUICK</code>
             stay thread-only and are excluded from SCOOP builds. Proof: target <code>simple_web_scoop_tests</code>.</p>
         </section>
+        <section id="streaming">
+            <h2>Streaming and the peer address</h2>
+            <p><code>SIMPLE_WEB_SERVER_RESPONSE</code> can stream long-lived responses (Server-Sent
+            Events and the like): <code>send_stream_head (status, content_type)</code> writes the status
+            plus <code>Cache-Control: no-cache</code> and <code>Connection: close</code> (no
+            Content-Length - the connection's close delimits the body), then <code>send_chunk</code>
+            writes and flushes each piece; <code>is_streaming</code> tells the story, and the contracts
+            enforce head-once, chunks-only-after-head. A raising connector's failed write is swallowed
+            into <code>is_streaming := False</code>; EWF's standalone connector never reports a hung-up
+            client, so bound a stream's lifetime in the application. In mock mode the head lands in
+            <code>mock_headers</code> and chunks append to <code>mock_body</code>.</p>
+            <p><code>SIMPLE_WEB_SERVER_REQUEST.remote_address</code> reports the connection's peer IP
+            (the CGI <code>REMOTE_ADDR</code> meta variable; empty when unavailable), with
+            <code>set_mock_remote_address</code> for tests - the honest input for per-client limits.
+            Real-socket proof: the <code>/peer</code> and <code>/stream</code> routes in the SCOOP suite.</p>
+        </section>
     </main>
 
     <footer>

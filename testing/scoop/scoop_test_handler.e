@@ -25,6 +25,8 @@ feature {NONE} -- Setup
 		do
 			routes.on_get ("/hello", agent hello)
 			routes.on_get ("/slow", agent slow)
+			routes.on_get ("/peer", agent peer)
+			routes.on_get ("/stream", agent stream)
 		end
 
 feature {NONE} -- Handlers
@@ -45,6 +47,20 @@ feature {NONE} -- Handlers
 			create l_env
 			l_env.sleep (2_000_000_000)
 			a_response.send_text ("slow done")
+		end
+
+	peer (a_request: SIMPLE_WEB_SERVER_REQUEST; a_response: SIMPLE_WEB_SERVER_RESPONSE)
+			-- The connection's peer address, end to end over the real socket.
+		do
+			a_response.send_text (a_request.remote_address)
+		end
+
+	stream (a_request: SIMPLE_WEB_SERVER_REQUEST; a_response: SIMPLE_WEB_SERVER_RESPONSE)
+			-- A streamed head plus two chunks over the real socket.
+		do
+			a_response.send_stream_head (200, "text/event-stream")
+			a_response.send_chunk (": stream-preamble%N%N")
+			a_response.send_chunk ("id: 1%Nevent: message%Ndata: {%"n%":1}%N%N")
 		end
 
 end
