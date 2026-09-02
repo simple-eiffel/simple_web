@@ -140,6 +140,35 @@ concurrently).
 SCOOP builds by the ECF (`src/server/thread`). Build the proof with
 `ec.sh test -config simple_web.ecf -target simple_web_scoop_tests`.
 
+## Streaming responses and the peer address
+
+For Server-Sent Events and other long-lived responses, `SIMPLE_WEB_SERVER_RESPONSE` can
+stream: send the head once, then chunks as they happen.
+
+```eiffel
+stream (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+    do
+        res.send_stream_head (200, "text/event-stream")   -- status + Content-Type,
+                                                           -- Cache-Control: no-cache, Connection: close
+        res.send_chunk (": hello%N%N")                     -- written and flushed at once
+        res.send_chunk ("id: 1%Nevent: message%Ndata: {}%N%N")
+    end                                                    -- returning ends the stream (the connection closes)
+```
+
+The contract is honest about what EWF can and cannot tell you: `send_stream_head` may be called
+once (`is_streaming` turns True), `send_chunk` only after it. No Content-Length is sent - the
+connection's close delimits the body. If a connector reports a failed write with an exception,
+`send_chunk` swallows it and `is_streaming` becomes False. EWF's standalone connector does NOT
+report writes to a hung-up client (it swallows socket errors below the WSF surface), so a
+disconnect is invisible: bound a stream's lifetime in the application. In mock mode chunks
+append to `mock_body` and the head lands in `mock_headers`, so streams are testable in memory.
+
+`SIMPLE_WEB_SERVER_REQUEST.remote_address` reports the connection's peer IP as the connector
+supplies it (the CGI `REMOTE_ADDR` meta variable; empty when unavailable) - the honest input
+for per-client rate limiting. Mock requests report `mock_remote_address`
+(`set_mock_remote_address`). Real-socket proof for both: the `/peer` and `/stream` routes in
+`testing/scoop/scoop_test_app.e`.
+
 ## Features
 
 - **HTTP Client** - GET, POST, PUT, DELETE with fluent builder

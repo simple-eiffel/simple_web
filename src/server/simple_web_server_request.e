@@ -25,6 +25,7 @@ feature {NONE} -- Initialization
 			create path_parameters.make (5)
 			create mock_headers.make (5)
 			create mock_body.make_empty
+			create mock_remote_address.make_empty
 			is_mock := False
 		ensure
 			wsf_request_set: wsf_request = a_wsf_request
@@ -42,6 +43,7 @@ feature {NONE} -- Initialization
 			create path_parameters.make (5)
 			create mock_headers.make (5)
 			create mock_body.make_empty
+			create mock_remote_address.make_empty
 			is_mock := True
 		ensure
 			is_mock: is_mock
@@ -100,6 +102,27 @@ feature -- Access
 	path_parameters: HASH_TABLE [STRING_32, STRING_32]
 			-- Path parameters extracted from URL pattern.
 			-- E.g., for pattern "/users/{id}" and path "/users/123", contains ["id" -> "123"].
+
+	remote_address: STRING_8
+			-- The connection's peer IP address as the underlying connector
+			-- reports it (the CGI REMOTE_ADDR meta variable; EWF's standalone
+			-- connector fills it from the socket's peer). Empty when the
+			-- connector does not supply one. In mock mode: `mock_remote_address'.
+		do
+			if is_mock then
+				Result := mock_remote_address.twin
+			elseif attached wsf_request as al_l_request then
+				Result := al_l_request.remote_addr.to_string_8
+			else
+				create Result.make_empty
+			end
+		ensure
+			result_attached: Result /= Void
+			mock_faithful: is_mock implies Result.same_string (mock_remote_address)
+		end
+
+	mock_remote_address: STRING_8
+			-- Peer address reported in mock mode (empty by default).
 
 feature -- Query Parameters
 
@@ -389,6 +412,17 @@ feature -- Mock Helpers
 			body_set: mock_body = a_body
 		end
 
+	set_mock_remote_address (a_address: STRING_8)
+			-- Report `a_address' as the peer address in mock mode.
+		require
+			is_mock: is_mock
+			address_attached: a_address /= Void
+		do
+			mock_remote_address := a_address
+		ensure
+			address_set: mock_remote_address = a_address
+		end
+
 feature {NONE} -- Implementation
 
 	sanitizer: SIMPLE_WEB_SANITIZER
@@ -457,6 +491,7 @@ invariant
 	wsf_request_attached_or_mock: is_mock or wsf_request /= Void
 	path_parameters_attached: path_parameters /= Void
 	mock_headers_attached: mock_headers /= Void
+	mock_remote_address_attached: mock_remote_address /= Void
 
 note
 	copyright: "Copyright (c) 2024-2025, Larry Rix"

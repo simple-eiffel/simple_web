@@ -40,6 +40,11 @@ feature {NONE} -- Initialization
 				check_true ("200 with the greeting the root shared", l_body.has_substring ("200") and l_body.has_substring ("hello from scoop"))
 				l_body := get ("/nowhere")
 				check_true ("404 for an unknown path", l_body.has_substring ("404"))
+				l_body := get ("/peer")
+				check_true ("peer address is the loopback client", l_body.has_substring ("127.0.0.1"))
+				l_body := get ("/stream")
+				check_true ("streamed head and both chunks arrive", l_body.has_substring ("text/event-stream")
+					and l_body.has_substring (": stream-preamble") and l_body.has_substring ("data: {%"n%":1}"))
 				l_started := seconds_of_day
 				two_slow_requests
 				l_elapsed := seconds_of_day - l_started

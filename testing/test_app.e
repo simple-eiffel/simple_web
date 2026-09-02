@@ -22,6 +22,7 @@ feature {NONE} -- Initialization
 			run_sanitizer_tests
 			run_router_tests
 			run_route_tests
+			run_streaming_and_peer_tests
 			run_resilience_tests
 
 			print ("%N========================%N")
@@ -171,6 +172,18 @@ feature {NONE} -- Test Runners
 			run_test (agent resilience_tests.test_policy_execute_with_retry, "test_policy_execute_with_retry")
 		end
 
+	run_streaming_and_peer_tests
+			-- Run streaming response + peer address tests.
+		do
+			print ("%N=== TEST_STREAMING_AND_PEER ===%N")
+			create streaming_tests
+			run_test (agent streaming_tests.test_remote_address_empty_by_default, "test_remote_address_empty_by_default")
+			run_test (agent streaming_tests.test_remote_address_reports_mock_peer, "test_remote_address_reports_mock_peer")
+			run_test (agent streaming_tests.test_stream_head_sets_status_type_and_streaming, "test_stream_head_sets_status_type_and_streaming")
+			run_test (agent streaming_tests.test_chunks_append_in_order_and_stream_stays_open, "test_chunks_append_in_order_and_stream_stays_open")
+			run_test (agent streaming_tests.test_empty_chunk_changes_nothing, "test_empty_chunk_changes_nothing")
+		end
+
 feature {NONE} -- Implementation
 
 	lib_tests: LIB_TESTS
@@ -179,6 +192,7 @@ feature {NONE} -- Implementation
 	router_tests: TEST_SIMPLE_WEB_SERVER_ROUTER
 	route_tests: TEST_SIMPLE_WEB_SERVER_ROUTE
 	resilience_tests: TEST_RESILIENCE
+	streaming_tests: TEST_STREAMING_AND_PEER
 
 	passed: INTEGER
 	failed: INTEGER

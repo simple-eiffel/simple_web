@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Streaming responses: `SIMPLE_WEB_SERVER_RESPONSE.send_stream_head` (status + Content-Type + Cache-Control: no-cache + Connection: close, no Content-Length), `send_chunk` (write + flush, exceptions from a raising connector swallowed into `is_streaming := False`), `is_streaming`. Head once, chunks only after the head - contracted. Mock mode records the head in `mock_headers` and appends chunks to `mock_body`. Documented honestly: EWF's standalone connector never reports a hung-up client (socket errors are swallowed below WSF), so applications must bound a stream's lifetime.
+- `SIMPLE_WEB_SERVER_REQUEST.remote_address`: the connection's peer IP (CGI `REMOTE_ADDR` meta variable), empty when the connector does not supply one; `mock_remote_address` + `set_mock_remote_address` for tests. Real-socket proof: `/peer` and `/stream` routes in the SCOOP suite.
 - SCOOP mode. `SIMPLE_WEB_HANDLER_SERVER [H]` + `SIMPLE_WEB_REQUEST_HANDLER` + `SIMPLE_WEB_ROUTES`: the application supplies a handler *class*, instantiated per request on the request's processor, so no agent ever crosses a processor. `SIMPLE_WEB_SHARED` / `SIMPLE_WEB_SETTINGS`: process-wide strings through a `once ("PROCESS")` of separate type. Proof target `simple_web_scoop_tests` (`use="scoop"`): a real socket client, a shared value reaching a handler, a 404, two 2-second requests served concurrently by EWF's SCOOP connector pool.
 
 ### Changed
