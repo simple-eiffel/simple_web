@@ -148,6 +148,17 @@
                 <li><a href="cookbook.html"><strong>Cookbook</strong></a> - Real-world recipes and patterns</li>
             </ul>
         </section>
+        <section id="scoop">
+            <h2>SCOOP mode</h2>
+            <p>Since 0.2.0 simple_web serves under SCOOP. Supply a handler <em>class</em> rather than agents:
+            <code>SIMPLE_WEB_HANDLER_SERVER [MY_HANDLER]</code> creates one <code>MY_HANDLER</code> (a
+            <code>SIMPLE_WEB_REQUEST_HANDLER</code>) per request on the request's processor; its
+            <code>setup_routes</code> fills a per-request <code>SIMPLE_WEB_ROUTES</code> with the familiar
+            <code>on_get</code> / <code>on_post</code> / <code>use</code> calls. Process-wide strings travel through
+            <code>SIMPLE_WEB_SHARED</code> (<code>shared_put</code> on the root before <code>start</code>,
+            <code>shared_item</code> inside handlers). <code>SIMPLE_WEB_SERVER</code> and <code>SIMPLE_WEB_QUICK</code>
+            stay thread-only and are excluded from SCOOP builds. Proof: target <code>simple_web_scoop_tests</code>.</p>
+        </section>
     </main>
 
     <footer>

@@ -162,7 +162,7 @@ feature -- Advanced Operations
 						if attached {STRING} al_headers.item_for_iteration [1] as al_hdr_name and then
 							attached {READABLE_STRING} al_headers.item_for_iteration [2] as al_hdr_value
 						then
-							Result.add_header (al_hdr_name, al_hdr_value)
+							Result.add_header (al_hdr_name, al_hdr_value.to_string_8)
 						end
 						al_headers.forth
 					end

@@ -41,7 +41,19 @@
 			<file_rule>
 				<exclude>/wms_api$</exclude>
 				<exclude>/todo_api$</exclude>
+				<exclude>/server/thread$</exclude>
 			</file_rule>
+		</cluster>
+		<!-- Thread-mode-only servers: SIMPLE_WEB_SERVER registers handler agents on the root processor, which a
+		     SCOOP request processor can never call, and its once ("PROCESS") singletons are illegal under SCOOP.
+		     SCOOP builds use SIMPLE_WEB_HANDLER_SERVER [H] from src\server\handler, which works in both modes. -->
+		<cluster name="server_thread" location=".\src\server\thread\" recursive="true">
+			<condition>
+				<concurrency value="thread"/>
+			</condition>
+			<condition>
+				<concurrency value="none"/>
+			</condition>
 		</cluster>
 	</target>
 	<target name="simple_web_tests" extends="simple_web">
@@ -57,8 +69,24 @@
 			<file_rule>
 				<exclude>/wms_api$</exclude>
 				<exclude>/todo_api$</exclude>
+				<exclude>/scoop$</exclude>
 			</file_rule>
 		</cluster>
+	</target>
+	<!-- SCOOP-mode proof: a SIMPLE_WEB_HANDLER_SERVER on its own processor serves real HTTP over a socket
+	     (a shared value reaching a handler, a 404, two slow requests served concurrently). -->
+	<target name="simple_web_scoop_tests" extends="simple_web">
+		<root class="SCOOP_TEST_APP" feature="make"/>
+		<option warning="warning">
+			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+		</option>
+		<setting name="console_application" value="true"/>
+		<capability>
+			<concurrency use="scoop"/>
+		</capability>
+		<library name="net" location="$ISE_LIBRARY\library\net\net.ecf"/>
+		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
+		<cluster name="scoop_test" location=".\testing\scoop\" recursive="true"/>
 	</target>
 	<target name="wms_api" extends="simple_web">
 		<root class="WMS_API_SERVER" feature="default_create"/>
