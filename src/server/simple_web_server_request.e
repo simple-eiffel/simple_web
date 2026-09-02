@@ -205,28 +205,66 @@ feature -- Path Parameters
 feature -- Headers
 
 	header (a_name: READABLE_STRING_GENERAL): detachable STRING_8
-			-- Get header value by name (case-insensitive).
-			-- Returns Void if not found.
+			-- Value of request header `a_name', or Void when the request does
+			-- not carry it.
+			-- The name is matched the way CGI spells a header as a meta
+			-- variable (RFC 3875 s.4.1.18): case is ignored and `-' and `_'
+			-- are the same character, so "X-File-Name", "x-file-name" and
+			-- "X_File_Name" all name the one header sent as `X-File-Name'.
 		require
 			name_attached: a_name /= Void
-		local
-			l_header_name: STRING_8
 		do
 			if is_mock then
-				Result := mock_headers.item (a_name.to_string_32.as_upper.to_string_8)
+				Result := mock_headers.item (meta_name (a_name))
 			elseif attached wsf_request as al_l_request then
-				l_header_name := "HTTP_" + a_name.to_string_32.as_upper.to_string_8
-				if attached al_l_request.meta_string_variable (l_header_name) as al_l_value then
+				if attached al_l_request.meta_string_variable (meta_variable_name (a_name)) as al_l_value then
 					Result := al_l_value.to_string_8
 				end
 			end
+		end
+
+	meta_name (a_name: READABLE_STRING_GENERAL): STRING_8
+			-- Header name `a_name' in the CGI meta-variable spelling, without
+			-- the "HTTP_" prefix: upper case, every hyphen an underscore.
+			-- ("X-File-Name" -> "X_FILE_NAME"; "content-type" -> "CONTENT_TYPE".)
+		require
+			name_attached: a_name /= Void
+		do
+			Result := a_name.to_string_32.as_upper.to_string_8
+			Result.replace_substring_all (Header_word_separator, Meta_word_separator)
+		ensure
+			result_attached: Result /= Void
+			same_length: Result.count = a_name.count
+			no_hyphen: not Result.has ('-')
+			already_upper: Result.as_upper.same_string (Result)
+		end
+
+	meta_variable_name (a_name: READABLE_STRING_GENERAL): STRING_8
+			-- The CGI meta variable a connector fills from header `a_name'.
+			-- Every header takes the "HTTP_" prefix except the two the CGI
+			-- specification names on their own - CONTENT_TYPE and
+			-- CONTENT_LENGTH - which carry no prefix at all. EWF's standalone
+			-- connector builds its meta variables by exactly this rule
+			-- (WGI_HTTPD_REQUEST_HANDLER), so this is the name to ask it for.
+		require
+			name_attached: a_name /= Void
+		do
+			Result := meta_name (a_name)
+			if not (Result.same_string (Meta_content_type) or Result.same_string (Meta_content_length)) then
+				Result.prepend (Meta_http_prefix)
+			end
+		ensure
+			result_attached: Result /= Void
+			prefixed_unless_content_meta: Result.starts_with (Meta_http_prefix)
+				or Result.same_string (Meta_content_type)
+				or Result.same_string (Meta_content_length)
 		end
 
 	content_type: detachable STRING_8
 			-- Content-Type header value.
 		do
 			if is_mock then
-				Result := mock_headers.item ("CONTENT-TYPE")
+				Result := mock_headers.item (Meta_content_type)
 			elseif attached wsf_request as al_l_request then
 				if attached al_l_request.content_type as al_l_ct then
 					Result := al_l_ct.string.to_string_8
@@ -391,14 +429,18 @@ feature -- Mock Helpers
 
 	set_mock_header (a_name: STRING_8; a_value: STRING_8)
 			-- Set mock header for testing.
+			-- Stored under the CGI meta spelling of `a_name', which is what
+			-- `header' looks up, so a mock request answers a hyphenated name
+			-- exactly as a real one does.
 		require
 			is_mock: is_mock
 			name_attached: a_name /= Void
 			value_attached: a_value /= Void
 		do
-			mock_headers.force (a_value, a_name.as_upper)
+			mock_headers.force (a_value, meta_name (a_name))
 		ensure
-			header_set: mock_headers.has (a_name.as_upper)
+			header_set: mock_headers.has (meta_name (a_name))
+			readable_by_name: attached header (a_name) as al_read and then al_read.same_string (a_value)
 		end
 
 	set_mock_body (a_body: STRING_8)
@@ -422,6 +464,23 @@ feature -- Mock Helpers
 		ensure
 			address_set: mock_remote_address = a_address
 		end
+
+feature -- Constants
+
+	Meta_http_prefix: STRING_8 = "HTTP_"
+			-- What CGI puts in front of a request header's meta variable.
+
+	Meta_content_type: STRING_8 = "CONTENT_TYPE"
+			-- The Content-Type header's meta variable: no "HTTP_" prefix.
+
+	Meta_content_length: STRING_8 = "CONTENT_LENGTH"
+			-- The Content-Length header's meta variable: no "HTTP_" prefix.
+
+	Header_word_separator: STRING_8 = "-"
+			-- What separates the words of a header name on the wire.
+
+	Meta_word_separator: STRING_8 = "_"
+			-- What separates them in the meta-variable spelling.
 
 feature {NONE} -- Implementation
 

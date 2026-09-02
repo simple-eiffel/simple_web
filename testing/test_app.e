@@ -23,6 +23,7 @@ feature {NONE} -- Initialization
 			run_router_tests
 			run_route_tests
 			run_streaming_and_peer_tests
+			run_request_header_tests
 			run_resilience_tests
 
 			print ("%N========================%N")
@@ -184,6 +185,22 @@ feature {NONE} -- Test Runners
 			run_test (agent streaming_tests.test_empty_chunk_changes_nothing, "test_empty_chunk_changes_nothing")
 		end
 
+	run_request_header_tests
+			-- Run request header lookup tests.
+		do
+			print ("%N=== TEST_REQUEST_HEADERS ===%N")
+			create request_header_tests
+			run_test (agent request_header_tests.test_hyphenated_header_reads_back, "test_hyphenated_header_reads_back")
+			run_test (agent request_header_tests.test_header_name_spellings_agree, "test_header_name_spellings_agree")
+			run_test (agent request_header_tests.test_underscore_name_reads_hyphenated_header, "test_underscore_name_reads_hyphenated_header")
+			run_test (agent request_header_tests.test_authorization_unchanged, "test_authorization_unchanged")
+			run_test (agent request_header_tests.test_absent_header_is_void, "test_absent_header_is_void")
+			run_test (agent request_header_tests.test_meta_name_is_the_cgi_spelling, "test_meta_name_is_the_cgi_spelling")
+			run_test (agent request_header_tests.test_meta_variable_name_prefixes_all_but_the_content_pair, "test_meta_variable_name_prefixes_all_but_the_content_pair")
+			run_test (agent request_header_tests.test_content_type_reads_through_header, "test_content_type_reads_through_header")
+			run_test (agent request_header_tests.test_content_length_reports_mock_body, "test_content_length_reports_mock_body")
+		end
+
 feature {NONE} -- Implementation
 
 	lib_tests: LIB_TESTS
@@ -193,6 +210,7 @@ feature {NONE} -- Implementation
 	route_tests: TEST_SIMPLE_WEB_SERVER_ROUTE
 	resilience_tests: TEST_RESILIENCE
 	streaming_tests: TEST_STREAMING_AND_PEER
+	request_header_tests: TEST_REQUEST_HEADERS
 
 	passed: INTEGER
 	failed: INTEGER
