@@ -80,7 +80,7 @@ feature {NONE} -- Route Dispatch
 feature {NONE} -- Implementation
 
 	router: SIMPLE_WEB_SERVER_ROUTER
-			-- Shared router singleton.
+			-- Shared router singleton (process-wide).
 		once ("PROCESS")
 			create Result
 		ensure

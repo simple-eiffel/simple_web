@@ -158,7 +158,7 @@ feature -- Server Control
 feature {NONE} -- Implementation
 
 	router: SIMPLE_WEB_SERVER_ROUTER
-			-- Shared router singleton (same instance used by execution).
+			-- Shared router singleton (process-wide).
 		once ("PROCESS")
 			create Result
 		ensure

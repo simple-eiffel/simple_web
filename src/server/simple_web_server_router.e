@@ -13,7 +13,7 @@ class
 feature -- Access
 
 	routes: ARRAYED_LIST [SIMPLE_WEB_SERVER_ROUTE]
-			-- Registered routes (shared across entire process).
+			-- Registered routes (shared across all threads/processors).
 		once ("PROCESS")
 			create Result.make (20)
 		ensure
@@ -21,7 +21,7 @@ feature -- Access
 		end
 
 	middleware_pipeline: SIMPLE_WEB_MIDDLEWARE_PIPELINE
-			-- Middleware pipeline (shared across entire process).
+			-- Middleware pipeline (shared across all threads/processors).
 		once ("PROCESS")
 			create Result.make
 		ensure
