@@ -169,6 +169,36 @@ for per-client rate limiting. Mock requests report `mock_remote_address`
 (`set_mock_remote_address`). Real-socket proof for both: the `/peer` and `/stream` routes in
 `testing/scoop/scoop_test_app.e`.
 
+## Reading request headers
+
+`SIMPLE_WEB_SERVER_REQUEST.header (a_name)` answers a request header by name. A connector does
+not hand headers over under the names the client sent: CGI (RFC 3875 s.4.1.18) upper-cases the
+name, turns every hyphen into an underscore and prefixes `HTTP_`, so `X-File-Name` arrives as
+`HTTP_X_FILE_NAME`. `Content-Type` and `Content-Length` are the two exceptions - they arrive
+as `CONTENT_TYPE` and `CONTENT_LENGTH`, with no prefix.
+
+`header` makes that translation for you, which means case and the choice of hyphen or
+underscore do not matter:
+
+```eiffel
+upload (req: SIMPLE_WEB_SERVER_REQUEST; res: SIMPLE_WEB_SERVER_RESPONSE)
+    do
+        if attached req.header ("X-File-Name") as l_name then   -- so does "x-file-name",
+            ...                                                  -- and so does "X_File_Name"
+        end
+    end
+```
+
+`meta_name ("X-File-Name")` gives `X_FILE_NAME` and `meta_variable_name ("X-File-Name")` gives
+`HTTP_X_FILE_NAME`, if you ever need to name the variable yourself.
+
+**Fixed in 0.3.1:** before that release the hyphens were left alone, so `header` asked for
+`HTTP_X-FILE-NAME` and *no hyphenated header could ever be read* - `X-Forwarded-For`,
+`X-Real-IP`, `User-Agent`, `Referer`, `X-API-Key` and every custom one silently answered
+`Void`. `Authorization`, having no hyphen, worked, which is why the bug went unseen. If your
+code carries a workaround that asks for the meta spelling directly, it still works; you can
+now drop it.
+
 ## Features
 
 - **HTTP Client** - GET, POST, PUT, DELETE with fluent builder

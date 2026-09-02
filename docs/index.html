@@ -175,6 +175,28 @@
             <code>set_mock_remote_address</code> for tests - the honest input for per-client limits.
             Real-socket proof: the <code>/peer</code> and <code>/stream</code> routes in the SCOOP suite.</p>
         </section>
+        <section id="headers">
+            <h2>Reading request headers</h2>
+            <p><code>SIMPLE_WEB_SERVER_REQUEST.header (a_name)</code> answers a request header by name.
+            A connector does not hand headers over under the names the client sent: CGI (RFC 3875
+            s.4.1.18) upper-cases the name, turns every hyphen into an underscore and prefixes
+            <code>HTTP_</code>, so <code>X-File-Name</code> arrives as <code>HTTP_X_FILE_NAME</code>.
+            <code>Content-Type</code> and <code>Content-Length</code> are the two exceptions - they
+            arrive as <code>CONTENT_TYPE</code> and <code>CONTENT_LENGTH</code>, with no prefix.
+            <code>header</code> makes that translation, so case and the choice of hyphen or underscore
+            do not matter: <code>header ("X-File-Name")</code>, <code>header ("x-file-name")</code> and
+            <code>header ("X_File_Name")</code> all name the one header. <code>meta_name</code> and
+            <code>meta_variable_name</code> expose the mapping itself.</p>
+            <p><strong>Fixed in 0.3.1.</strong> Before that release the hyphens were left alone, so
+            <code>header</code> asked for <code>HTTP_X-FILE-NAME</code> and no hyphenated header could
+            ever be read - <code>X-Forwarded-For</code>, <code>X-Real-IP</code>,
+            <code>User-Agent</code>, <code>Referer</code>, <code>X-API-Key</code> and every custom one
+            silently answered <code>Void</code>. <code>Authorization</code>, having no hyphen, worked,
+            which is why the bug went unseen. <code>header ("Content-Type")</code> and
+            <code>header ("Content-Length")</code> were unreachable for the same reason and now work;
+            the dedicated <code>content_type</code> and <code>content_length</code> accessors were
+            never affected. Real-socket proof: the <code>/headers</code> route in the SCOOP suite.</p>
+        </section>
     </main>
 
     <footer>

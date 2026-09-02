@@ -45,6 +45,7 @@ feature {NONE} -- Initialization
 				l_body := get ("/stream")
 				check_true ("streamed head and both chunks arrive", l_body.has_substring ("text/event-stream")
 					and l_body.has_substring (": stream-preamble") and l_body.has_substring ("data: {%"n%":1}"))
+				check_hyphenated_headers
 				l_started := seconds_of_day
 				two_slow_requests
 				l_elapsed := seconds_of_day - l_started
@@ -58,6 +59,38 @@ feature {NONE} -- Initialization
 			else
 				print ("ALL TESTS PASSED%N")
 			end
+			io.output.flush
+			finish
+		end
+
+	finish
+			-- End the process with a status a caller can read.
+			-- The root returning is not enough: the server runs on its own
+			-- processor and never stops listening, so a SCOOP process whose
+			-- root has returned keeps running (and, with a redirected stdout,
+			-- keeps the whole report sitting unflushed in the buffer). Dying
+			-- deliberately is what makes this suite runnable unattended.
+			--
+			-- Not {EXCEPTIONS}.die: `esdie' unwinds the Eiffel runtime, and
+			-- with the server's processor still inside its accept loop that
+			-- unwinding segfaults (the report is already printed by then, so
+			-- the crash costs no evidence - only the exit status, which is
+			-- exactly what a caller needs). `_exit' ends the process where it
+			-- stands, after `io.output.flush' has already emptied the buffer.
+		do
+			if failed > 0 then
+				c_exit (1)
+			else
+				c_exit (0)
+			end
+		end
+
+	c_exit (a_code: INTEGER)
+			-- End the process at once with status `a_code'.
+		external
+			"C inline use <stdlib.h>"
+		alias
+			"_exit((int) $a_code);"
 		end
 
 feature {NONE} -- The server's processor
@@ -126,6 +159,43 @@ feature {NONE} -- HTTP over a socket
 	send_get (a_socket: NETWORK_STREAM_SOCKET; a_path: STRING_8)
 		do
 			a_socket.put_string ("GET " + a_path + " HTTP/1.0%R%NHost: 127.0.0.1%R%NConnection: close%R%N%R%N")
+		end
+
+	get_with_extra_headers (a_path, a_extra: STRING_8): STRING_8
+			-- The raw response for GET `a_path' with `a_extra' (already
+			-- CRLF-terminated header lines) added to the request head.
+		do
+			if attached connected_socket as l_socket then
+				l_socket.put_string ("GET " + a_path + " HTTP/1.0%R%NHost: 127.0.0.1%R%NConnection: close%R%N" + a_extra + "%R%N")
+				Result := read_all (l_socket)
+				l_socket.close
+			else
+				Result := "(no connection)"
+			end
+		end
+
+	check_hyphenated_headers
+			-- A real request carrying hyphenated headers, read back through
+			-- SIMPLE_WEB_SERVER_REQUEST.header over the real connector. This is
+			-- the 0.3.1 regression: `X-File-Name' has to reach the handler.
+		local
+			l_body: STRING_8
+		do
+			l_body := get_with_extra_headers ("/headers",
+				"X-File-Name: caption.png%R%N" +
+				"X-Caption: hello%R%N" +
+				"Authorization: Bearer scoop-token%R%N" +
+				"Content-Type: text/plain%R%N" +
+				"Content-Length: 0%R%N")
+			check_true ("X-File-Name reaches the handler", l_body.has_substring ("file=[caption.png]"))
+			check_true ("the same header answers a lower-case name", l_body.has_substring ("lower=[caption.png]"))
+			check_true ("the same header answers its meta spelling", l_body.has_substring ("under=[caption.png]"))
+			check_true ("a second hyphenated header reaches the handler", l_body.has_substring ("caption=[hello]"))
+			check_true ("Authorization still reaches the handler", l_body.has_substring ("auth=[Bearer scoop-token]"))
+			check_true ("Content-Type reaches `header' (CGI drops the HTTP_ prefix)", l_body.has_substring ("ctype=[text/plain]"))
+			check_true ("Content-Length reaches `header'", l_body.has_substring ("clen=[0]"))
+			check_true ("the content_type accessor agrees", l_body.has_substring ("ctype_accessor=[text/plain]"))
+			check_true ("the meta name is the one CGI spells", l_body.has_substring ("meta=[HTTP_X_FILE_NAME]"))
 		end
 
 	read_all (a_socket: NETWORK_STREAM_SOCKET): STRING_8
@@ -197,6 +267,7 @@ feature {NONE} -- Reporting
 				print ("  FAIL: " + a_name + "%N")
 				failed := failed + 1
 			end
+			io.output.flush
 		end
 
 end
