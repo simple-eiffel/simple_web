@@ -24,6 +24,7 @@ feature {NONE} -- Initialization
 			run_route_tests
 			run_streaming_and_peer_tests
 			run_request_header_tests
+			run_bind_address_tests
 			run_resilience_tests
 
 			print ("%N========================%N")
@@ -201,6 +202,17 @@ feature {NONE} -- Test Runners
 			run_test (agent request_header_tests.test_content_length_reports_mock_body, "test_content_length_reports_mock_body")
 		end
 
+	run_bind_address_tests
+			-- Run bind-address (listening interface) tests.
+		do
+			print ("%N=== TEST_BIND_ADDRESS ===%N")
+			create bind_address_tests
+			run_test (agent bind_address_tests.test_bind_address_is_handed_to_the_connector, "test_bind_address_is_handed_to_the_connector")
+			run_test (agent bind_address_tests.test_no_bind_address_leaves_every_interface, "test_no_bind_address_leaves_every_interface")
+			run_test (agent bind_address_tests.test_the_port_option_still_stands_beside_the_address, "test_the_port_option_still_stands_beside_the_address")
+			run_test (agent bind_address_tests.test_a_later_address_replaces_the_earlier_one, "test_a_later_address_replaces_the_earlier_one")
+		end
+
 feature {NONE} -- Implementation
 
 	lib_tests: LIB_TESTS
@@ -211,6 +223,7 @@ feature {NONE} -- Implementation
 	resilience_tests: TEST_RESILIENCE
 	streaming_tests: TEST_STREAMING_AND_PEER
 	request_header_tests: TEST_REQUEST_HEADERS
+	bind_address_tests: TEST_BIND_ADDRESS
 
 	passed: INTEGER
 	failed: INTEGER

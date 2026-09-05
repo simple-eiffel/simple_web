@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-05
+
+### Added
+
+- **`SIMPLE_WEB_HANDLER_SERVER.set_bind_address (a_host)` and the `bind_address` query: a server can now say which interface it listens on.** Until now it could not. `make (a_port)` set the `port`, `max_concurrent_connections` and `verbose` service options and nothing else, so EWF's standalone launcher never received a `server_name`; `HTTPD_SERVER_I.new_listening_socket` then took its `make_server_by_port` branch and bound `0.0.0.0` - every interface on the machine - for every server this library has ever started. There was no way for a consumer to ask for anything narrower.
+
+  `set_bind_address` records the address and sets the `server_name` service option, which `WSF_STANDALONE_SERVICE_LAUNCHER` hands to `HTTPD_CONFIGURATION.set_http_server_name`; `HTTPD_SERVER_I` resolves it through `INET_ADDRESS_FACTORY` and takes the `make_server_by_address_and_port` branch instead. `bind_address` answers `Void` when no address was named.
+
+  Found on 2026-09-05 from the consuming side: simple_chat pinned `bind_address = "127.0.0.1"` in its configuration class, refused a `bind_address` key in `server.toml` with *"not configurable; the server always binds 127.0.0.1"*, and carried two invariants asserting it - and never handed the value to a transport that could accept one. The room was observed listening on `0.0.0.0:8090`. A contract on a configuration value is not enforcement at the socket, and the missing half was here.
+
+### Changed
+
+- **`make (a_port)` is unchanged, and the all-interfaces default is now documented as a choice rather than left as an accident.** A server that means to be reachable from the network still needs nothing extra; a server that means to be private must call `set_bind_address`. The class note, the README and this entry all say so in the same words. Consumers in the ecosystem at the time of the change: `simple_chat` (`CHAT_WEB_APP`, which now names the loopback address) and this library's own SCOOP proof (`testing/scoop/scoop_test_app.e`, which deliberately does not, and is the live demonstration of the default).
+
+### Added (tests)
+
+- `TEST_BIND_ADDRESS` (target `simple_web_tests`) reads the option table back through `service_options` - the very table `start` hands to `launch`: the address reaches `server_name`; a server built with `make` alone offers no `server_name` at all; naming an address disturbs neither `port` nor `max_concurrent_connections`; and a second call replaces the first. `BIND_TEST_HANDLER` is the minimal handler class those tests instantiate the generic with.
+
 ## [0.3.1] - 2026-09-02
 
 ### Fixed

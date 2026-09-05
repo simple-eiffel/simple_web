@@ -123,6 +123,7 @@ end
 -- the application
 create server.make (8080)              -- SIMPLE_WEB_HANDLER_SERVER [HELLO_HANDLER]
 server.set_max_concurrent_connections (32)
+server.set_bind_address ("127.0.0.1")  -- optional: this machine only. Without it, EVERY interface
 server.start                           -- blocking on the caller's processor
 ```
 
@@ -139,6 +140,31 @@ concurrently).
 `SIMPLE_WEB_SERVER` and `SIMPLE_WEB_QUICK` remain for thread-mode programs and are excluded from
 SCOOP builds by the ECF (`src/server/thread`). Build the proof with
 `ec.sh test -config simple_web.ecf -target simple_web_scoop_tests`.
+
+### Which interface it listens on
+
+`make (a_port)` alone binds **every interface on the machine** - `0.0.0.0`. That is EWF's
+behavior and it is this library's default: `HTTPD_SERVER_I.new_listening_socket` calls
+`make_server_by_port` when no address is configured, and `make_server_by_address_and_port`
+when one is. It is the right default for a server that means to be reachable, and it is
+stated here so that it is a choice rather than a surprise.
+
+A server that means to be private must say so:
+
+```eiffel
+create server.make (8080)
+server.set_bind_address ("127.0.0.1")   -- nothing off this machine can connect
+server.start
+```
+
+`set_bind_address` records the address in `bind_address` (a query; `Void` means every
+interface) and hands it to the connector as EWF's `server_name` service option, which
+`WSF_STANDALONE_SERVICE_LAUNCHER` passes to `HTTPD_CONFIGURATION.set_http_server_name`. An
+address the machine cannot resolve is a bind failure at `start`, not an error at the call.
+
+`make`'s own behavior is unchanged, so every existing consumer keeps the interface it had.
+Vector tests: `testing/server/test_bind_address.e` (the option really reaches the table the
+launcher reads, and no address is offered when none was set).
 
 ## Streaming responses and the peer address
 
