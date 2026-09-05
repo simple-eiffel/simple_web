@@ -158,6 +158,11 @@
             <code>SIMPLE_WEB_SHARED</code> (<code>shared_put</code> on the root before <code>start</code>,
             <code>shared_item</code> inside handlers). <code>SIMPLE_WEB_SERVER</code> and <code>SIMPLE_WEB_QUICK</code>
             stay thread-only and are excluded from SCOOP builds. Proof: target <code>simple_web_scoop_tests</code>.</p>
+            <p><strong>Which interface it listens on.</strong> <code>make (a_port)</code> alone binds
+            <em>every</em> interface on the machine (<code>0.0.0.0</code>) - EWF's behavior, and this library's
+            documented default. Since 0.4.0 a server that means to be private says so:
+            <code>server.set_bind_address ("127.0.0.1")</code> before <code>start</code>. The query
+            <code>bind_address</code> answers <code>Void</code> when no address was named.</p>
         </section>
         <section id="streaming">
             <h2>Streaming and the peer address</h2>
