@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `wms_api`, `wms_api_tests`, `todo_api`, `todo_api_tests` targets compile again: un-renamed `al_` usages and
+  a tuple label left over from the February naming rename in the WMS/todo API servers and worker simulator;
+  unused locals removed.
+
 ## [0.4.2] - 2026-10-08
 
 ### Fixed

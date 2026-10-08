@@ -215,7 +215,7 @@ feature {NONE} -- Handlers: Products
 			l_sku := a_req.path_parameter ("sku")
 			if attached l_sku as al_sku then
 				if attached wms.find_product_by_sku (al_sku.to_string_8) as al_l_product then
-					res.send_json_object (product_to_json (l_product))
+					res.send_json_object (product_to_json (al_l_product))
 				else
 					send_error (res, 404, "Product not found: " + al_sku.to_string_8)
 				end
@@ -235,8 +235,8 @@ feature {NONE} -- Handlers: Locations
 		do
 			log_request (a_req)
 			l_wh_id := a_req.path_parameter ("warehouse_id")
-			if attached l_wh_id as l_wh_id and then l_wh_id.is_integer_64 then
-				l_locations := wms.warehouse_locations (l_wh_id.to_integer_64)
+			if attached l_wh_id as al_wh_id and then al_wh_id.is_integer_64 then
+				l_locations := wms.warehouse_locations (al_wh_id.to_integer_64)
 				create l_array.make
 				across l_locations as loc loop
 					l_array.add_object (location_to_json (loc)).do_nothing
@@ -258,8 +258,8 @@ feature {NONE} -- Handlers: Stock
 		do
 			log_request (a_req)
 			l_loc_id := a_req.path_parameter ("location_id")
-			if attached l_loc_id as l_loc_id and then l_loc_id.is_integer_64 then
-				l_stock_list := wms.stock_at_location (l_loc_id.to_integer_64)
+			if attached l_loc_id as al_loc_id and then al_loc_id.is_integer_64 then
+				l_stock_list := wms.stock_at_location (al_loc_id.to_integer_64)
 				create l_array.make
 				across l_stock_list as s loop
 					l_array.add_object (stock_to_json (s)).do_nothing
@@ -279,11 +279,11 @@ feature {NONE} -- Handlers: Stock
 		do
 			log_request (a_req)
 			l_prod_id := a_req.path_parameter ("product_id")
-			if attached l_prod_id as l_prod_id and then l_prod_id.is_integer_64 then
-				l_total := wms.total_stock_for_product (l_prod_id.to_integer_64)
-				l_available := wms.available_stock_for_product (l_prod_id.to_integer_64)
+			if attached l_prod_id as al_prod_id and then al_prod_id.is_integer_64 then
+				l_total := wms.total_stock_for_product (al_prod_id.to_integer_64)
+				l_available := wms.available_stock_for_product (al_prod_id.to_integer_64)
 				create l_json.make
-				l_json.put_integer (l_prod_id.to_integer_64, "product_id").do_nothing
+				l_json.put_integer (al_prod_id.to_integer_64, "product_id").do_nothing
 				l_json.put_integer (l_total.to_integer_64, "total_quantity").do_nothing
 				l_json.put_integer (l_available.to_integer_64, "available_quantity").do_nothing
 				l_json.put_integer ((l_total - l_available).to_integer_64, "reserved_quantity").do_nothing
@@ -318,7 +318,7 @@ feature {NONE} -- Handlers: Operations
 					l_user_id := al_json.integer_item ("user_id")
 
 					if al_json.has_key ("reference") and then attached al_json.string_item ("reference") as al_l_ref then
-						l_reference := l_ref.to_string_8
+						l_reference := al_l_ref.to_string_8
 					else
 						l_reference := ""
 					end
@@ -371,7 +371,7 @@ feature {NONE} -- Handlers: Operations
 					l_user_id := al_json.integer_item ("user_id")
 
 					if al_json.has_key ("reference") and then attached al_json.string_item ("reference") as al_l_ref then
-						l_reference := l_ref.to_string_8
+						l_reference := al_l_ref.to_string_8
 					else
 						l_reference := ""
 					end
@@ -424,7 +424,7 @@ feature {NONE} -- Handlers: Operations
 					l_location_id := al_json.integer_item ("location_id")
 					l_quantity := al_json.integer_item ("quantity").to_integer_32
 					if attached al_json.string_item ("order_reference") as al_l_ord_ref then
-						l_order_ref := l_ord_ref.to_string_8
+						l_order_ref := al_l_ord_ref.to_string_8
 					else
 						l_order_ref := ""
 					end
@@ -440,7 +440,7 @@ feature {NONE} -- Handlers: Operations
 						l_reservation := wms.reserve_stock (l_product_id, l_location_id, l_quantity, l_order_ref, l_user_id, l_expires)
 						if attached l_reservation as al_r then
 							res.set_created
-							res.send_json_object (reservation_to_json (r))
+							res.send_json_object (reservation_to_json (al_r))
 						else
 							send_error (res, 409, "Reservation failed - insufficient available stock")
 						end
@@ -464,13 +464,13 @@ feature {NONE} -- Handlers: Operations
 		do
 			log_request (a_req)
 			l_id := a_req.path_parameter ("id")
-			if attached l_id as l_id and then l_id.is_integer_64 then
-				l_success := wms.release_reservation (l_id.to_integer_64)
+			if attached l_id as al_id and then al_id.is_integer_64 then
+				l_success := wms.release_reservation (al_id.to_integer_64)
 				if l_success then
 					create l_response.make
 					l_response.put_boolean (True, "success").do_nothing
 					l_response.put_string ("Reservation released", "message").do_nothing
-					l_response.put_integer (l_id.to_integer_64, "reservation_id").do_nothing
+					l_response.put_integer (al_id.to_integer_64, "reservation_id").do_nothing
 					res.send_json_object (l_response)
 				else
 					send_error (res, 404, "Reservation not found")
@@ -501,8 +501,8 @@ feature {NONE} -- Handlers: Movements
 				l_limit := 50
 			end
 
-			if attached l_prod_id as l_prod_id and then l_prod_id.is_integer_64 then
-				l_movements := wms.movements_for_product (l_prod_id.to_integer_64, l_limit)
+			if attached l_prod_id as al_prod_id and then al_prod_id.is_integer_64 then
+				l_movements := wms.movements_for_product (al_prod_id.to_integer_64, l_limit)
 				create l_array.make
 				across l_movements as m loop
 					l_array.add_object (movement_to_json (m)).do_nothing
@@ -615,7 +615,7 @@ feature {NONE} -- JSON Conversion
 			Result.put_string (a_prod.unit_of_measure, "unit_of_measure").do_nothing
 			Result.put_integer (a_prod.min_stock_level.to_integer_64, "min_stock_level").do_nothing
 			if attached a_prod.deleted_at as al_da then
-				Result.put_string (da, "deleted_at").do_nothing
+				Result.put_string (al_da, "deleted_at").do_nothing
 			end
 		end
 

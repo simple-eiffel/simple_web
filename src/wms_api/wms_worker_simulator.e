@@ -433,7 +433,6 @@ feature -- Operations
 		local
 			l_response: SIMPLE_WEB_RESPONSE
 			l_json: SIMPLE_JSON
-			l_array: detachable SIMPLE_JSON_ARRAY
 		do
 			l_response := client.get (base_url + "/api/warehouses")
 			if l_response.status_code = 200 then
@@ -442,7 +441,7 @@ feature -- Operations
 					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as al_wh then
 						current_warehouse_id := al_wh.integer_item ("id")
 						if attached al_wh.string_item ("name") as al_l_name then
-							log_success ("Selected warehouse: " + l_name.to_string_8 +
+							log_success ("Selected warehouse: " + al_l_name.to_string_8 +
 								" (ID: " + current_warehouse_id.out + ")")
 						else
 							log_success ("Selected warehouse ID: " + current_warehouse_id.out)
@@ -455,7 +454,7 @@ feature -- Operations
 			end
 		end
 
-	receive_shipment (a_po: STRING; a_items: ARRAY [TUPLE [product_id: INTEGER; l_location_id: INTEGER; quantity: INTEGER]])
+	receive_shipment (a_po: STRING; a_items: ARRAY [TUPLE [product_id: INTEGER; location_id: INTEGER; quantity: INTEGER]])
 			-- Receive multiple items from a purchase order.
 		local
 			l_body: STRING
@@ -591,7 +590,6 @@ feature -- Stock Queries
 			-- Find a location with stock for product. Returns 0 if none found.
 		local
 			l_response: SIMPLE_WEB_RESPONSE
-			l_json: SIMPLE_JSON
 		do
 			l_response := client.get (base_url + "/api/stock/product/" + a_product_id.out)
 			if l_response.status_code = 200 then
@@ -605,7 +603,6 @@ feature -- Stock Queries
 			-- Check and display stock at a location.
 		local
 			l_response: SIMPLE_WEB_RESPONSE
-			l_json: SIMPLE_JSON
 		do
 			l_response := client.get (base_url + "/api/stock/" + a_location_id.out)
 			if l_response.status_code = 200 then
@@ -815,7 +812,7 @@ feature -- Inventory Validation (Spot Checks)
 				if attached {SIMPLE_JSON_ARRAY} l_json.decode (l_response.body) as arr and then arr.count > 0 then
 					if attached {SIMPLE_JSON_OBJECT} arr.item (1) as al_mov then
 						if attached al_mov.string_item ("movement_type") as al_l_type then
-							l_found := l_type.to_string_8 ~ a_expected_type and
+							l_found := al_l_type.to_string_8 ~ a_expected_type and
 								al_mov.integer_item ("quantity").to_integer_32 = a_expected_quantity
 						end
 					end
@@ -871,7 +868,7 @@ feature -- Error Scenario Testing
 			if l_response.is_error then
 				log_success ("  Got expected error response: " + l_response.status_code.out)
 				if attached l_response.error_message as al_l_msg then
-					log_success ("  Error message: " + l_msg)
+					log_success ("  Error message: " + al_l_msg)
 				end
 				error_test_passed := error_test_passed + 1
 			else

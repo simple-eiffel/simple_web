@@ -235,7 +235,7 @@ feature {NONE} -- Handlers: CRUD
 
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if attached todo_app.find_todo (id_str.to_integer_64) as al_l_todo then
-					res.send_json_object (todo_to_json (l_todo))
+					res.send_json_object (todo_to_json (al_l_todo))
 				else
 					send_error (res, 404, "Todo not found")
 				end
@@ -261,7 +261,7 @@ feature {NONE} -- Handlers: CRUD
 				-- [F3] FRICTIONLESS: Single call checks all required fields
 				if al_json.has_all_keys (<<"title", "priority">>) then
 					if attached al_json.string_item ("title") as al_t then
-						l_title := t.to_string_8
+						l_title := al_t.to_string_8
 					else
 						l_title := ""
 					end
@@ -407,7 +407,7 @@ feature {NONE} -- Handlers: Actions
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.complete_todo (id_str.to_integer_64) then
 					if attached todo_app.find_todo (id_str.to_integer_64) as al_l_todo then
-						res.send_json_object (todo_to_json (l_todo))
+						res.send_json_object (todo_to_json (al_l_todo))
 					else
 						send_error (res, 500, "Todo updated but not found")
 					end
@@ -429,7 +429,7 @@ feature {NONE} -- Handlers: Actions
 			if attached l_id_param as id_str and then id_str.is_integer_64 then
 				if todo_app.uncomplete_todo (id_str.to_integer_64) then
 					if attached todo_app.find_todo (id_str.to_integer_64) as al_l_todo then
-						res.send_json_object (todo_to_json (l_todo))
+						res.send_json_object (todo_to_json (al_l_todo))
 					else
 						send_error (res, 500, "Todo updated but not found")
 					end
@@ -480,14 +480,14 @@ feature {NONE} -- JSON Conversion
 			Result.put_integer (a_todo.id, "id").do_nothing
 			Result.put_string (a_todo.title, "title").do_nothing
 			if attached a_todo.description as al_d then
-				Result.put_string (d, "description").do_nothing
+				Result.put_string (al_d, "description").do_nothing
 			else
 				Result.put_null ("description").do_nothing
 			end
 			Result.put_integer (a_todo.priority.to_integer_64, "priority").do_nothing
 			Result.put_boolean (a_todo.is_completed, "is_completed").do_nothing
 			if attached a_todo.due_date as al_dd then
-				Result.put_string (dd, "due_date").do_nothing
+				Result.put_string (al_dd, "due_date").do_nothing
 			else
 				Result.put_null ("due_date").do_nothing
 			end

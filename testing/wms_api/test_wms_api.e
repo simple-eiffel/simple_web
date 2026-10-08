@@ -24,7 +24,6 @@ feature -- Test: JSON Conversion
 		local
 			l_server: WMS_API_SERVER
 			l_wh: WMS_WAREHOUSE
-			l_json: SIMPLE_JSON_OBJECT
 		do
 			create l_server.make (9999)
 
