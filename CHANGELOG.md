@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-10-08
+
+### Fixed
+- `SIMPLE_WEB_HYBRID_CLIENT.output_bytes` always encodes the process output as UTF-8. simple_process
+  1.1.0 decodes a child's UTF-8 output, so text such as "café" now arrives with every character below
+  U+0100, and the old "narrow when it fits" branch turned "é" into the single byte E9 instead of C3 A9.
+  `output_bytes` moved to an exported `Conversion` clause so a test can reach it
+  (`test_hybrid_output_bytes_utf_8`).
+
 ## [0.4.1] - 2026-10-08
 
 ### Fixed

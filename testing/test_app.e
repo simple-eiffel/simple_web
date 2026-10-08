@@ -62,6 +62,7 @@ feature {NONE} -- Test Runners
 			run_test (agent lib_tests.test_response_is_server_error, "test_response_is_server_error")
 			-- Client tests
 			run_test (agent lib_tests.test_client_make, "test_client_make")
+			run_test (agent lib_tests.test_hybrid_output_bytes_utf_8, "test_hybrid_output_bytes_utf_8")
 		end
 
 	run_middleware_tests

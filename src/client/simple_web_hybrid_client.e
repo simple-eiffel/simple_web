@@ -83,6 +83,15 @@ feature -- Advanced Operations
 			result_attached: Result /= Void
 		end
 
+feature -- Conversion
+
+	output_bytes (a_text: READABLE_STRING_32): STRING_8
+			-- The process output as UTF-8 bytes: simple_process (1.1.0) decodes
+			-- the child's UTF-8 output, so encode it back for the curl parser.
+		do
+			Result := {UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (a_text)
+		end
+
 feature {NONE} -- Implementation
 
 	execute_curl_process (a_method, a_url, a_body: STRING): SIMPLE_WEB_RESPONSE
@@ -147,17 +156,6 @@ feature {NONE} -- Implementation
 
 			l_output := output_bytes (process_helper.shell_output (l_cmd, Void))
 			Result := parse_curl_output (l_output)
-		end
-
-	output_bytes (a_text: READABLE_STRING_32): STRING_8
-			-- The process output as bytes: unchanged when every code fits a byte
-			-- (simple_process widens the raw bytes), UTF-8 encoded otherwise.
-		do
-			if a_text.is_valid_as_string_8 then
-				Result := a_text.to_string_8
-			else
-				Result := {UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (a_text)
-			end
 		end
 
 	parse_curl_output (a_output: STRING): SIMPLE_WEB_RESPONSE

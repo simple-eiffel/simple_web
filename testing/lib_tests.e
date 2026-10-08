@@ -184,4 +184,17 @@ feature -- Test: Client Creation
 			assert_attached ("client created", client)
 		end
 
+	test_hybrid_output_bytes_utf_8
+			-- Decoded process output goes back to the curl parser as UTF-8 bytes.
+		note
+			testing: "covers/{SIMPLE_WEB_HYBRID_CLIENT}.output_bytes"
+		local
+			client: SIMPLE_WEB_HYBRID_CLIENT
+		do
+			create client.make
+			assert_strings_equal ("ascii unchanged", "ok 200", client.output_bytes ("ok 200"))
+			assert_strings_equal ("cafe as utf-8", "caf%/195/%/169/", client.output_bytes ({STRING_32} "caf%/233/"))
+			assert_strings_equal ("hebrew as utf-8", "%/215/%/169/", client.output_bytes ({STRING_32} "%/1513/"))
+		end
+
 end
