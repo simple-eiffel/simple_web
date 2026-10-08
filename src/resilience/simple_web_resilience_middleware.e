@@ -3,7 +3,7 @@ note
 		Resilience middleware for simple_web server pipeline.
 
 		Wraps downstream handlers with resilience patterns:
-		- Circuit l_breaker for downstream service protection
+		- Circuit breaker for downstream service protection
 		- Bulkhead for concurrency limiting
 		- Rate limiting integration
 

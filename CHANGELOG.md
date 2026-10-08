@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-10-08
+
+### Fixed
+- Text damaged by the 2026-02-05/06 naming-standards rename is back to its original wording, taken from
+  the rename commits' own diffs (36 lines, text only): the endpoint lists in `todo_web_api_server.e` and
+  `wms_api_server.e` (`/api/l_todos`, `{l_sku}`, `l_locations/{l_wh_id}`, `{l_id}` ... read `/api/todos`,
+  `{sku}`, `locations/{wh_id}`, `{id}` again), API examples (`l_json.` / `l_response.`), the Ollama client
+  description (`a_localhost:11434`), and note and test descriptions.
+
 ## [0.4.0] - 2026-09-05
 
 ### Added

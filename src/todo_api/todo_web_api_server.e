@@ -16,16 +16,16 @@ note
 		     Entities implement apply_json (a_json) deferred feature
 
 		[F3] FIELD VALIDATION BOILERPLATE - RESOLVED
-		     Solution: l_json.has_all_keys (<<"title", "priority">>)
-		     Also: l_json.has_any_key, l_json.missing_keys for detailed errors
+		     Solution: json.has_all_keys (<<"title", "priority">>)
+		     Also: json.has_any_key, json.missing_keys for detailed errors
 
 		[F4] TYPE COERCION FROM JSON - RESOLVED
-		     Solution: l_json.integer_32_item ("priority") - no more .to_integer_32
-		     Also: l_json.natural_32_item for unsigned values
+		     Solution: json.integer_32_item ("priority") - no more .to_integer_32
+		     Also: json.natural_32_item for unsigned values
 
 		[F5] OPTIONAL FIELD HANDLING - RESOLVED
-		     Solution: l_json.optional_string ("description") returns detachable
-		     Also: l_json.optional_integer, l_json.optional_boolean with defaults
+		     Solution: json.optional_string ("description") returns detachable
+		     Also: json.optional_integer, json.optional_boolean with defaults
 
 		[F6] UPDATE PARTIAL FIELDS - Pattern documented
 		     Use SIMPLE_JSON_SERIALIZABLE.apply_json for full updates
@@ -42,15 +42,15 @@ note
 		     Impact: Different setup for dev/test/prod
 
 		Endpoints:
-			GET    /api/l_todos           - List all l_todos (with filters)
-			GET    /api/l_todos/{id}      - Get l_todo by ID
-			POST   /api/l_todos           - Create new l_todo
-			PUT    /api/l_todos/{id}      - Update l_todo
-			PATCH  /api/l_todos/{id}      - Partial update
-			DELETE /api/l_todos/{id}      - Delete l_todo
-			POST   /api/l_todos/{id}/complete   - Mark as completed
-			POST   /api/l_todos/{id}/incomplete - Mark as incomplete
-			DELETE /api/l_todos/completed       - Clear completed l_todos
+			GET    /api/todos           - List all todos (with filters)
+			GET    /api/todos/{id}      - Get todo by ID
+			POST   /api/todos           - Create new todo
+			PUT    /api/todos/{id}      - Update todo
+			PATCH  /api/todos/{id}      - Partial update
+			DELETE /api/todos/{id}      - Delete todo
+			POST   /api/todos/{id}/complete   - Mark as completed
+			POST   /api/todos/{id}/incomplete - Mark as incomplete
+			DELETE /api/todos/completed       - Clear completed todos
 			GET    /api/stats                 - Statistics
 	]"
 	author: "Claude Code"

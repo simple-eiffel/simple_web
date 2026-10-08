@@ -8,7 +8,7 @@ note
 		FRICTION LOG (document each pain point as discovered):
 
 		[F1] JSON BODY PARSING - Every POST handler repeats body_as_json parsing
-		     Current: if attached req.body_as_json as al_l_json then ... else error
+		     Current: if attached req.body_as_json as l_json then ... else error
 		     Desired: Middleware that auto-parses and validates JSON bodies
 
 		[F2] ERROR RESPONSE BOILERPLATE - Every error needs JSON structure
@@ -23,7 +23,7 @@ note
 		     Current: if not l_json.has ("product_id") then error end
 		     Desired: Declarative validation schema
 
-		[F5] LOGGING - No built-in request/l_response logging
+		[F5] LOGGING - No built-in request/response logging
 		     Current: Manual print statements
 		     Desired: Middleware logging with timestamps
 
@@ -32,17 +32,17 @@ note
 		     Desired: Middleware that validates tokens before handlers
 
 		Endpoints:
-			GET  /api/l_warehouses           - List all l_warehouses
+			GET  /api/warehouses           - List all warehouses
 			GET  /api/products             - List all products
-			GET  /api/products/{l_sku}       - Get product by SKU
-			GET  /api/l_locations/{l_wh_id}    - Locations in warehouse
-			GET  /api/stock/{l_loc_id}       - Stock at location
-			GET  /api/stock/product/{l_id}   - Total stock for product
+			GET  /api/products/{sku}       - Get product by SKU
+			GET  /api/locations/{wh_id}    - Locations in warehouse
+			GET  /api/stock/{loc_id}       - Stock at location
+			GET  /api/stock/product/{id}   - Total stock for product
 			POST /api/receive              - Receive stock
-			POST /api/transfer             - Transfer stock between l_locations
+			POST /api/transfer             - Transfer stock between locations
 			POST /api/reserve              - Reserve stock for order
-			DELETE /api/reserve/{l_id}       - Release l_reservation
-			GET  /api/l_movements/{l_prod_id}  - Movement history
+			DELETE /api/reserve/{id}       - Release reservation
+			GET  /api/movements/{prod_id}  - Movement history
 			GET  /api/low-stock            - Products below minimum
 			POST /api/setup                - Initialize test data
 	]"
