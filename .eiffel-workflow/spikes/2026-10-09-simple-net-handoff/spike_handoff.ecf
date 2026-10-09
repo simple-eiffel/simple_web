@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-23-0" name="spike_handoff" uuid="5B7E2C41-9A3D-4F1E-8C62-1D0A7B9E3F55">
+	<target name="spike_handoff">
+		<root class="HO_ROOT" feature="make"/>
+		<option warning="warning"><assertions precondition="true" postcondition="true" check="true"/></option>
+		<setting name="console_application" value="true"/>
+		<capability><concurrency support="scoop" use="scoop"/><void_safety support="all"/></capability>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="simple_mml" location="$SIMPLE_EIFFEL\simple_mml\simple_mml.ecf"/>
+		<library name="simple_net" location="$SIMPLE_EIFFEL\simple_net\simple_net.ecf"/>
+		<cluster name="spike" location=".\src\"/>
+		<override name="patch" location=".\override\"/>
+	</target>
+</system>

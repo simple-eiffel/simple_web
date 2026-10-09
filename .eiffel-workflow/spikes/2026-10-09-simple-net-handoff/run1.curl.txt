@@ -1,0 +1,24 @@
+--- T0 fast alone
+200 0.001069s
+--- T3 20 parallel fast
+     20 200
+--- T1 fast while one slow in flight
+fast-during-slow 200 0.000884s
+slow 200 2.013666s
+--- T2 5 slow + 5 fast parallel
+fast 200 0.000839s
+fast 200 0.001175s
+fast 200 0.000935s
+fast 200 0.000937s
+fast 200 0.000842s
+slow 200 2.002787s
+slow 200 2.009274s
+slow 200 2.009203s
+slow 200 2.010494s
+slow 200 2.011865s
+wall: 2157 ms
+--- T5 120 parallel slow
+    120 200
+wall: 3080 ms
+--- T4 fast after
+200 0.001024s
