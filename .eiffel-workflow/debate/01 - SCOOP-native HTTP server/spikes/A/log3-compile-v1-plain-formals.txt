@@ -1,0 +1,48 @@
+Event logged.
+[1;33m=== TEST MODE (finalize -keep) ===[0m
+[0;34mRunning:[0m ec.exe -batch -config spike_a.ecf -target spike_a -finalize -keep -c_compile
+Eiffel Compilation Manager
+Version 25.02.9.8732 - win64
+Degree 6: Examining System
+Degree 5: Parsing Classes
+Degree 4: Analyzing Inheritance
+Degree 3: Checking Types
+-------------------------------------------------------------------------------
+Error code: VUAR(3)
+Type error: formal argument or tuple field of a separate call should be of
+  a separate type if the actual argument or the source expression is of a
+  reference type.
+What to do: make sure that type of the formal argument or of the tuple
+  field is separate.
+Class: A_EXECUTION
+Feature: call_app
+Called feature: handle (a_req: SIMPLE_WEB_SERVER_REQUEST; a_res: SIMPLE_WEB_SERVER_RESPONSE) from A_APP
+Argument name: a_req
+Argument position: 1
+Formal argument type: SIMPLE_WEB_SERVER_REQUEST
+Actual argument type: SIMPLE_WEB_SERVER_REQUEST
+Line: 24
+      do
+->      a_app.handle (a_req, a_res)
+      end
+-------------------------------------------------------------------------------
+Error code: VUAR(3)
+Type error: formal argument or tuple field of a separate call should be of
+  a separate type if the actual argument or the source expression is of a
+  reference type.
+What to do: make sure that type of the formal argument or of the tuple
+  field is separate.
+Class: A_EXECUTION
+Feature: call_app
+Called feature: handle (a_req: SIMPLE_WEB_SERVER_REQUEST; a_res: SIMPLE_WEB_SERVER_RESPONSE) from A_APP
+Argument name: a_res
+Argument position: 2
+Formal argument type: SIMPLE_WEB_SERVER_RESPONSE
+Actual argument type: SIMPLE_WEB_SERVER_RESPONSE
+Line: 24
+      do
+->      a_app.handle (a_req, a_res)
+      end
+-------------------------------------------------------------------------------
+Event logged.
+[0;31m✗ Compilation failed with exit code 127[0m

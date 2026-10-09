@@ -1,0 +1,21 @@
+--- T0 fast alone
+200 0.003479s
+--- T3 20 parallel fast only
+     20 200
+--- T1 fast while one slow in flight
+slow: 200 2.009965s
+fast-during-slow: 200 1.582882s
+--- T2 20 parallel (5 fast, 5 slow); wall clock total
+fast 200 0.004247s
+slow 200 2.017608s
+fast 200 4.020160s
+slow 200 3.987703s
+fast 200 6.017662s
+slow 200 6.009465s
+fast 200 6.003941s
+slow 200 8.033119s
+fast 200 10.004557s
+slow 200 9.992571s
+wall: 10136 ms
+--- T4 fast 3 s after the burst
+200 0.004062s

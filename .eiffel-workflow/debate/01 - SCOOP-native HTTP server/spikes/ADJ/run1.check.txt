@@ -1,0 +1,20 @@
+--- log file check
+lines: 34
+root line: 1
+hit lines: 27  slow lines: 6
+distinct n in 1..20: 20
+lines not matching the logger format:
+2026-10-08T22:05:27 INFO root started
+2026-10-08T22:05:28 INFO hit n=0
+2026-10-08T22:05:28 INFO hit n=1
+2026-10-08T22:05:28 INFO hit n=2
+2026-10-08T22:05:28 INFO hit n=4
+--- first 3 log lines
+2026-10-08T22:05:27 INFO root started
+2026-10-08T22:05:28 INFO hit n=0
+2026-10-08T22:05:28 INFO hit n=1
+--- ticks
+2026-10-08T22:05:27 INFO root started
+tick 26 t=32.781999999999996
+tick count: 26
+corrected format check (regex '^YYYY-MM-DDTHH:MM:SS INFO (root started|hit n=N|slow begin)$'): malformed lines = 0; 34 = 1 root + 27 hit + 6 slow; tick gap min 0.201 max 0.246 s (26 ticks while serving). The 'not matching' block above used a wrong pattern (expected '[').

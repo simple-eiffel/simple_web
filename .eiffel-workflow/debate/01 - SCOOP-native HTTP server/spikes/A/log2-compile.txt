@@ -1,0 +1,51 @@
+Event logged.
+[1;33m=== TEST MODE (finalize -keep) ===[0m
+[0;34mRunning:[0m ec.exe -batch -config spike_a.ecf -target spike_a -finalize -keep -c_compile
+Eiffel Compilation Manager
+Version 25.02.9.8732 - win64
+Degree 6: Examining System
+Degree 5: Parsing Classes
+Degree 4: Analyzing Inheritance
+-------------------------------------------------------------------------------
+Error code: VFFD(8)
+Error: once function with once key "PROCESS" is not of a separate type. 
+What to do: change once function to be non-once, remove once key "PROCESS"
+  or mark its type as separate.
+Class: SIMPLE_WEB_SERVER_ROUTER
+Feature name: routes
+Line: 15
+->  routes: ARRAYED_LIST [SIMPLE_WEB_SERVER_ROUTE]
+        -- Registered routes (shared across all threads/processors).
+-------------------------------------------------------------------------------
+Error code: VFFD(8)
+Error: once function with once key "PROCESS" is not of a separate type. 
+What to do: change once function to be non-once, remove once key "PROCESS"
+  or mark its type as separate.
+Class: SIMPLE_WEB_SERVER_ROUTER
+Feature name: middleware_pipeline
+Line: 23
+->  middleware_pipeline: SIMPLE_WEB_MIDDLEWARE_PIPELINE
+        -- Middleware pipeline (shared across all threads/processors).
+-------------------------------------------------------------------------------
+Error code: VFFD(8)
+Error: once function with once key "PROCESS" is not of a separate type. 
+What to do: change once function to be non-once, remove once key "PROCESS"
+  or mark its type as separate.
+Class: SIMPLE_WEB_SERVER
+Feature name: router
+Line: 160
+->  router: SIMPLE_WEB_SERVER_ROUTER
+        -- Shared router singleton (process-wide).
+-------------------------------------------------------------------------------
+Error code: VFFD(8)
+Error: once function with once key "PROCESS" is not of a separate type. 
+What to do: change once function to be non-once, remove once key "PROCESS"
+  or mark its type as separate.
+Class: SIMPLE_WEB_SERVER_EXECUTION
+Feature name: router
+Line: 84
+->  router: SIMPLE_WEB_SERVER_ROUTER
+        -- Shared router singleton (process-wide).
+-------------------------------------------------------------------------------
+Event logged.
+[0;31m✗ Compilation failed with exit code 127[0m

@@ -1,0 +1,25 @@
+--- fast alone x5
+200 0.004269s
+200 0.004402s
+200 0.005829s
+200 0.006508s
+200 0.004205s
+--- /r20 (last route)
+200 0.004352s
+--- 20 parallel fast
+     20 200
+--- fast during slow
+fast-during-slow: 200 0.004044s
+slow: 200 2.006163s
+--- 5 fast + 5 slow wall
+fast 200 0.006927s
+fast 200 0.006863s
+fast 200 0.005415s
+fast 200 0.004649s
+fast 200 0.004665s
+slow 200 2.008230s
+slow 200 2.015267s
+slow 200 2.015735s
+slow 200 2.019918s
+slow 200 2.009002s
+wall: 2144 ms
