@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 2026-10-09
 
 ### Changed
 - `SIMPLE_WEB_HANDLER_SERVER.set_bind_address` takes `separate READABLE_STRING_8` and copies it. Under SCOOP
@@ -82,7 +82,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SIMPLE_WEB_SERVER_REQUEST.set_mock_header` now stores under the meta spelling, so a mock request answers a hyphenated name exactly as a real one does; its postcondition asserts the value reads back through `header`. Mock header keys are consequently spelled `X_FILE_NAME` rather than `X-FILE-NAME`; nothing in the ecosystem reads `mock_headers` directly.
 - The SCOOP proof (`testing/scoop/scoop_test_app.e`) now flushes after every check and ends the process itself. Previously the root returned but the server's processor kept listening, so the process never exited and - with stdout redirected - the whole report stayed in an unflushed buffer. The suite is now runnable unattended and returns 0 or 1.
 
-## [Unreleased]
+## [0.3.0] - 2026-09-01
+
+> Heading reconstructed 2026-10-09. These entries sat under a second `[Unreleased]` heading although
+> 0.3.1 shipped after them; they span commits d10451f ("simple_web 0.2.0: SCOOP mode", 2026-08-29) and
+> 165bd5a (streaming and the peer address, 2026-09-01), plus older undated items at the end.
 
 ### Added
 - Streaming responses: `SIMPLE_WEB_SERVER_RESPONSE.send_stream_head` (status + Content-Type + Cache-Control: no-cache + Connection: close, no Content-Length), `send_chunk` (write + flush, exceptions from a raising connector swallowed into `is_streaming := False`), `is_streaming`. Head once, chunks only after the head - contracted. Mock mode records the head in `mock_headers` and appends chunks to `mock_body`. Documented honestly: EWF's standalone connector never reports a hung-up client (socket errors are swallowed below WSF), so applications must bound a stream's lifetime.

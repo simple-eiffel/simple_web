@@ -15,7 +15,7 @@
         <h1>simple_web</h1>
         <p class="tagline">High-Level HTTP Library for Eiffel</p>
         <div class="badges">
-            <span class="badge badge-version">v1.0.0</span>
+            <span class="badge badge-version">v0.5.0</span>
             <span class="badge badge-license">MIT</span>
             <span class="badge badge-dbc">DbC Enforced</span>
         </div>
@@ -163,6 +163,11 @@
             documented default. Since 0.4.0 a server that means to be private says so:
             <code>server.set_bind_address ("127.0.0.1")</code> before <code>start</code>. The query
             <code>bind_address</code> answers <code>Void</code> when no address was named.</p>
+            <p><strong>The SCOOP root (0.5.0).</strong> Create the server <code>separate</code>, then in a routine
+            taking it as a separate argument call <code>set_bind_address ("127.0.0.1")</code> (it accepts the
+            root's own string) and <code>start</code>, which runs on the server's processor while the root goes on.
+            When the root is done it calls <code>end_process (0)</code> from <code>SIMPLE_WEB_SHARED</code>: the
+            server never leaves its accept loop, so a root that merely returns leaves the process running.</p>
         </section>
         <section id="streaming">
             <h2>Streaming and the peer address</h2>

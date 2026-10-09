@@ -137,6 +137,24 @@ separate command so the root keeps going (see `testing/scoop/scoop_test_app.e`, 
 a real socket, a shared value reaching a handler, a 404, and two 2-second requests served
 concurrently).
 
+The SCOOP root, end to end (0.5.0: `set_bind_address` accepts the root's own string through a
+separate call, and `end_process` ends the program - the server's processor never leaves its
+accept loop, so a root that merely returns leaves the process running and the port taken):
+
+```eiffel
+start_server (a_server: separate SIMPLE_WEB_HANDLER_SERVER [HELLO_HANDLER])
+    do
+        a_server.set_bind_address ("127.0.0.1")
+        a_server.start                 -- asynchronous: runs on the server's processor
+    end
+
+-- in the root (which inherits SIMPLE_WEB_SHARED)
+create server.make (8080)              -- server: separate SIMPLE_WEB_HANDLER_SERVER [HELLO_HANDLER]
+start_server (server)
+...                                    -- the root's own work, e.g. a window's message loop
+end_process (0)
+```
+
 `SIMPLE_WEB_SERVER` and `SIMPLE_WEB_QUICK` remain for thread-mode programs and are excluded from
 SCOOP builds by the ECF (`src/server/thread`). Build the proof with
 `ec.sh test -config simple_web.ecf -target simple_web_scoop_tests`.
