@@ -74,7 +74,7 @@ feature -- Access
 
 feature -- Configuration
 
-	set_bind_address (a_host: READABLE_STRING_8)
+	set_bind_address (a_host: separate READABLE_STRING_8)
 			-- Listen on `a_host' and on nothing else.
 			--
 			-- Without this call the connector binds every interface on the
@@ -90,14 +90,26 @@ feature -- Configuration
 			-- resolves it through INET_ADDRESS_FACTORY and binds that address
 			-- alone. A name the machine cannot resolve is therefore a bind
 			-- failure at `start', not an error here.
+			--
+			-- `a_host' is `separate' because under SCOOP the server usually
+			-- lives on its own processor: a root that creates it `separate'
+			-- and names its address passes a string from the root's processor,
+			-- which a non-separate formal rejects (VUAR(3)). It is copied here.
 		require
 			host_given: not a_host.is_empty
 		do
-			create bind_address.make_from_string (a_host)
+			create bind_address.make_from_separate (a_host)
 			set_service_option ("server_name", bind_address)
 		ensure
-			set: attached bind_address as al_address and then al_address.same_string (a_host)
+			set: is_bound_to (a_host)
 			handed_to_the_connector: attached service_options as al_options and then al_options.option ("server_name") = bind_address
+		end
+
+	is_bound_to (a_host: separate READABLE_STRING_8): BOOLEAN
+			-- Is `bind_address' the text of `a_host'?
+		do
+			Result := attached bind_address as al_address and then
+				al_address.same_string (create {STRING_8}.make_from_separate (a_host))
 		end
 
 	set_max_concurrent_connections (a_count: INTEGER)

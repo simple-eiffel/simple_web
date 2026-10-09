@@ -8,7 +8,9 @@ note
 		     handler created on a request processor (200 + the greeting);
 		  2. an unknown path answers 404;
 		  3. two two-second requests overlap - the connector's SCOOP pool
-		     serves them concurrently (well under four seconds in total).
+		     serves them concurrently (well under four seconds in total);
+		  4. a second server, its address named through a separate call to
+		     `set_bind_address', listens on 127.0.0.1 and serves.
 		Exit status: the root returns, which ends the process and with it
 		the server's processor.
 	]"
@@ -46,6 +48,7 @@ feature {NONE} -- Initialization
 				check_true ("streamed head and both chunks arrive", l_body.has_substring ("text/event-stream")
 					and l_body.has_substring (": stream-preamble") and l_body.has_substring ("data: {%"n%":1}"))
 				check_hyphenated_headers
+				check_loopback_server
 				l_started := seconds_of_day
 				two_slow_requests
 				l_elapsed := seconds_of_day - l_started
@@ -79,18 +82,10 @@ feature {NONE} -- Initialization
 			-- stands, after `io.output.flush' has already emptied the buffer.
 		do
 			if failed > 0 then
-				c_exit (1)
+				end_process (1)
 			else
-				c_exit (0)
+				end_process (0)
 			end
-		end
-
-	c_exit (a_code: INTEGER)
-			-- End the process at once with status `a_code'.
-		external
-			"C inline use <stdlib.h>"
-		alias
-			"_exit((int) $a_code);"
 		end
 
 feature {NONE} -- The server's processor
@@ -102,12 +97,38 @@ feature {NONE} -- The server's processor
 			a_server.start
 		end
 
+	start_loopback_server (a_server: separate SIMPLE_WEB_HANDLER_SERVER [SCOOP_TEST_HANDLER])
+			-- Name the address from this (the root's) processor, then start.
+		do
+			a_server.set_bind_address ("127.0.0.1")
+			check_true ("a separate call records the bind address", a_server.is_bound_to ("127.0.0.1"))
+			a_server.start
+		end
+
+	check_loopback_server
+			-- A server bound to loopback through a separate call answers there.
+		local
+			l_loopback: separate SIMPLE_WEB_HANDLER_SERVER [SCOOP_TEST_HANDLER]
+		do
+			create l_loopback.make (Loopback_port)
+			start_loopback_server (l_loopback)
+			check_true ("the loopback-bound server answers on 127.0.0.1",
+				wait_until_listening_on (Loopback_port) and then get_on (Loopback_port, "/hello").has_substring ("hello from scoop"))
+		end
+
 feature {NONE} -- HTTP over a socket
 
 	Port: INTEGER = 18077
+	Loopback_port: INTEGER = 18078
 
 	wait_until_listening: BOOLEAN
-			-- Up to ~10 s of connection attempts, 100 ms apart.
+			-- Up to ~10 s for the main server to accept a connection.
+		do
+			Result := wait_until_listening_on (Port)
+		end
+
+	wait_until_listening_on (a_port: INTEGER): BOOLEAN
+			-- Up to ~10 s of connection attempts on `a_port', 100 ms apart.
 		local
 			i: INTEGER
 			l_env: EXECUTION_ENVIRONMENT
@@ -118,7 +139,7 @@ feature {NONE} -- HTTP over a socket
 			until
 				i > 100 or Result
 			loop
-				if attached connected_socket as l_socket then
+				if attached connected_socket_on (a_port) as l_socket then
 					Result := True
 					l_socket.close
 				else
@@ -129,13 +150,19 @@ feature {NONE} -- HTTP over a socket
 		end
 
 	connected_socket: detachable NETWORK_STREAM_SOCKET
-			-- A socket connected to the server, or Void when it refuses.
+			-- A socket connected to the main server, or Void when it refuses.
+		do
+			Result := connected_socket_on (Port)
+		end
+
+	connected_socket_on (a_port: INTEGER): detachable NETWORK_STREAM_SOCKET
+			-- A socket connected to 127.0.0.1:`a_port', or Void when it refuses.
 		local
 			l_socket: NETWORK_STREAM_SOCKET
 			l_failed: BOOLEAN
 		do
 			if not l_failed then
-				create l_socket.make_client_by_port (Port, "127.0.0.1")
+				create l_socket.make_client_by_port (a_port, "127.0.0.1")
 				l_socket.connect
 				Result := l_socket
 			end
@@ -147,7 +174,13 @@ feature {NONE} -- HTTP over a socket
 	get (a_path: STRING_8): STRING_8
 			-- The raw HTTP/1.0 response for GET `a_path' (status line included).
 		do
-			if attached connected_socket as l_socket then
+			Result := get_on (Port, a_path)
+		end
+
+	get_on (a_port: INTEGER; a_path: STRING_8): STRING_8
+			-- The raw HTTP/1.0 response for GET `a_path' from 127.0.0.1:`a_port'.
+		do
+			if attached connected_socket_on (a_port) as l_socket then
 				send_get (l_socket, a_path)
 				Result := read_all (l_socket)
 				l_socket.close

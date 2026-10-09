@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `SIMPLE_WEB_HANDLER_SERVER.set_bind_address` takes `separate READABLE_STRING_8` and copies it. Under SCOOP
+  a root creates the server `separate`, and naming its address from the root passed a root-processor string
+  to a non-separate formal: VUAR(3), so a SCOOP program could not bind to loopback at all (found porting
+  simple_scholar's bible_htmx). Callers holding an ordinary string are unaffected (simple_chat rebuilt clean).
+  New query `is_bound_to (a_host)` states the postcondition across processors.
+
+### Added
+- `SIMPLE_WEB_SHARED.end_process (a_status)`: flush standard output and end the process. A SCOOP root that is
+  done must call it, because a server started `separate` never leaves its accept loop and a process whose
+  root merely returns keeps running and keeps its port. The SCOOP proof now uses it instead of its own `_exit`.
+- SCOOP proof (`simple_web_scoop_tests`): a second server, its address named through a separate call, answers
+  on 127.0.0.1 (17 checks, all pass).
+
 ### Fixed
 - `wms_api`, `wms_api_tests`, `todo_api`, `todo_api_tests` targets compile again: un-renamed `al_` usages and
   a tuple label left over from the February naming rename in the WMS/todo API servers and worker simulator;

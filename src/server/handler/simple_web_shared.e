@@ -53,6 +53,20 @@ feature -- Element change
 			readable: attached shared_item (a_key) as v and then v.same_string (a_value)
 		end
 
+feature -- Process
+
+	end_process (a_status: INTEGER)
+			-- Flush standard output and end the process now with `a_status'.
+			-- A SCOOP root calls this when it is done: a SIMPLE_WEB_HANDLER_SERVER
+			-- started `separate' never leaves its accept loop, so a process whose
+			-- root simply returns keeps running and keeps its port. Not
+			-- {EXCEPTIONS}.die: its runtime unwinding segfaults while the server's
+			-- processor is still inside that loop.
+		do
+			io.output.flush
+			c_exit (a_status)
+		end
+
 feature {NONE} -- Implementation (the separate calls, each with the settings locked)
 
 	item_of (a_settings: separate SIMPLE_WEB_SETTINGS; a_key: READABLE_STRING_8): detachable STRING_8
@@ -70,6 +84,16 @@ feature {NONE} -- Implementation (the separate calls, each with the settings loc
 	put_into (a_settings: separate SIMPLE_WEB_SETTINGS; a_key, a_value: READABLE_STRING_8)
 		do
 			a_settings.put (a_key, a_value)
+		end
+
+feature {NONE} -- Implementation (process exit)
+
+	c_exit (a_status: INTEGER)
+			-- End the process at once with status `a_status'.
+		external
+			"C inline use <stdlib.h>"
+		alias
+			"_exit((int) $a_status);"
 		end
 
 note
