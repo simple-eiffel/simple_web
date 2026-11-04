@@ -17,8 +17,8 @@ feature
 			l_t: TIME
 			i: INTEGER
 		do
-			shared_put ("log", "C:/Users/LJR19/AppData/Local/Temp/claude/D--prod/8cee566e-b341-44e8-80e4-cd2fc3dda70b/scratchpad/adj/run/adj.log")
-			shared_put ("db", "C:/Users/LJR19/AppData/Local/Temp/claude/D--prod/8cee566e-b341-44e8-80e4-cd2fc3dda70b/scratchpad/adj/run/adj.db")
+			shared_put ("log", "C:/Users/user/AppData/Local/Temp/claude/D--prod/8cee566e-b341-44e8-80e4-cd2fc3dda70b/scratchpad/adj/run/adj.log")
+			shared_put ("db", "C:/Users/user/AppData/Local/Temp/claude/D--prod/8cee566e-b341-44e8-80e4-cd2fc3dda70b/scratchpad/adj/run/adj.db")
 			create l_db.make (shared_db_path)
 			l_db.execute ("CREATE TABLE IF NOT EXISTS t (x INTEGER)")
 			l_db.execute ("DELETE FROM t")
