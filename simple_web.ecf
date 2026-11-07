@@ -36,7 +36,23 @@
 		<library name="uri_launcher" location="$ISE_LIBRARY\library\runtime\process\uri_launcher\uri_launcher.ecf"/>
 		<library name="uri_template" location="$ISE_LIBRARY\contrib\library\text\parser\uri_template\uri_template.ecf"/>
 		<library name="wsf" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf\wsf.ecf"/>
-		<library name="wsf_all" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf\connector\all.ecf"/>
+		<library name="wsf_all" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf\connector\all.ecf">
+			<!-- ISE names a MacPorts path for libfcgi on macOS; simple_web serves through the standalone connector. -->
+			<condition>
+				<platform excluded_value="macintosh"/>
+			</condition>
+		</library>
+		<!-- Homebrew keeps OpenSSL out of the default search paths. -->
+		<external_cflag value="-I/opt/homebrew/opt/openssl@3/include">
+			<condition>
+				<platform value="macintosh"/>
+			</condition>
+		</external_cflag>
+		<external_linker_flag value="-L/opt/homebrew/opt/openssl@3/lib">
+			<condition>
+				<platform value="macintosh"/>
+			</condition>
+		</external_linker_flag>
 		<cluster name="src" location=".\src\" recursive="true">
 			<file_rule>
 				<exclude>/wms_api$</exclude>
