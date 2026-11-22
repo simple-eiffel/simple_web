@@ -155,6 +155,23 @@ feature -- Server Control
 			set_service_option ("verbose", a_verbose)
 		end
 
+	set_bind_address (a_host: separate READABLE_STRING_8)
+			-- Listen on `a_host' and on nothing else. Without this call EWF's
+			-- connector binds every interface (0.0.0.0). Same mechanism as
+			-- SIMPLE_WEB_HANDLER_SERVER.set_bind_address: EWF's "server_name"
+			-- option, which HTTPD_SERVER_I resolves and binds alone.
+		require
+			host_given: not a_host.is_empty
+		do
+			create bind_address.make_from_separate (a_host)
+			set_service_option ("server_name", bind_address)
+		ensure
+			set: attached bind_address as al_address and then al_address.same_string (create {STRING_8}.make_from_separate (a_host))
+		end
+
+	bind_address: detachable IMMUTABLE_STRING_8
+			-- The one address `start' listens on; Void means every interface.
+
 feature {NONE} -- Implementation
 
 	router: SIMPLE_WEB_SERVER_ROUTER

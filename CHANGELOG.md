@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-22
+
+### Security
+- `SIMPLE_WEB_QUICK.serve_files` could serve files outside its folder: the request path was pasted onto the
+  folder unchecked, so `/../../<file>` escaped it. Every path must now pass `is_safe_static_path` (rooted;
+  no empty, `.`-led or `.`/space-ended segment; no `\`, `:`, control character or Windows device name),
+  checked at run time in every build; a refused path gets the same 404 as a missing file and is no longer
+  echoed back. Files are joined with the platform's own separator (`static_file_path`), so it also works
+  off Windows.
+- `SIMPLE_WEB_QUICK` now listens on 127.0.0.1 by default. `set_bind_address` names another address and
+  `listen_on_every_interface` restores 0.0.0.0. `SIMPLE_WEB_SERVER` gains `set_bind_address` (same
+  mechanism as `SIMPLE_WEB_HANDLER_SERVER`); its own default is unchanged.
+- `SIMPLE_WEB_HYBRID_CLIENT`: a URL or header holding a space or quote became extra curl options (argument
+  injection: `-o` writes a file, `--upload-file` sends one). URLs must pass `is_safe_url` and travel as
+  `--url`; headers must pass `is_safe_header`; every argument is quoted by the Windows rules
+  (`quoted_argument`); unsafe requests get 400 with no process started.
+
+### Fixed
+- The hybrid client's body now goes to curl on stdin (`--data-binary @-`), byte for byte. The old
+  command-line escaping doubled every backslash, so a JSON `\n` arrived as `\\n`.
+- Custom headers were sent with the value in place of the name.
+- curl's "000" (no HTTP answer) violated `SIMPLE_WEB_RESPONSE.make`'s precondition; it is now 503 with
+  "No HTTP answer: curl could not connect to the server".
+- The client runs `curl`, not `curl.exe`, so it works on Linux and macOS too.
+
 ## [0.5.0] - 2026-10-09
 
 ### Changed
