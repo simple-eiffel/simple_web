@@ -25,6 +25,7 @@ feature {NONE} -- Initialization
 			run_streaming_and_peer_tests
 			run_request_header_tests
 			run_bind_address_tests
+			run_web_safety_tests
 			run_resilience_tests
 
 			print ("%N========================%N")
@@ -214,6 +215,24 @@ feature {NONE} -- Test Runners
 			run_test (agent bind_address_tests.test_a_later_address_replaces_the_earlier_one, "test_a_later_address_replaces_the_earlier_one")
 		end
 
+	run_web_safety_tests
+			-- Run the 2026-11-22 safety tests (static paths, quick binding, hybrid client).
+		do
+			print ("%N=== TEST_WEB_SAFETY ===%N")
+			create web_safety_tests
+			run_test (agent web_safety_tests.test_static_path_accepts_ordinary_files, "test_static_path_accepts_ordinary_files")
+			run_test (agent web_safety_tests.test_static_path_refuses_escapes, "test_static_path_refuses_escapes")
+			run_test (agent web_safety_tests.test_static_path_refuses_device_names, "test_static_path_refuses_device_names")
+			run_test (agent web_safety_tests.test_static_file_path_uses_platform_separator, "test_static_file_path_uses_platform_separator")
+			run_test (agent web_safety_tests.test_quick_listens_on_this_machine_by_default, "test_quick_listens_on_this_machine_by_default")
+			run_test (agent web_safety_tests.test_quick_every_interface_only_on_request, "test_quick_every_interface_only_on_request")
+			run_test (agent web_safety_tests.test_quoted_argument_follows_windows_rules, "test_quoted_argument_follows_windows_rules")
+			run_test (agent web_safety_tests.test_hybrid_refuses_unsafe_urls, "test_hybrid_refuses_unsafe_urls")
+			run_test (agent web_safety_tests.test_hybrid_refuses_unsafe_headers, "test_hybrid_refuses_unsafe_headers")
+			run_test (agent web_safety_tests.test_curl_command_shape, "test_curl_command_shape")
+			run_test (agent web_safety_tests.test_hybrid_safe_request_runs_curl, "test_hybrid_safe_request_runs_curl")
+		end
+
 feature {NONE} -- Implementation
 
 	lib_tests: LIB_TESTS
@@ -225,6 +244,7 @@ feature {NONE} -- Implementation
 	streaming_tests: TEST_STREAMING_AND_PEER
 	request_header_tests: TEST_REQUEST_HEADERS
 	bind_address_tests: TEST_BIND_ADDRESS
+	web_safety_tests: TEST_WEB_SAFETY
 
 	passed: INTEGER
 	failed: INTEGER
